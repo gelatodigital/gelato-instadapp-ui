@@ -3,13 +3,14 @@ import { getMiniAddress } from "../utils/helpers";
 import { addresses, abis } from "@project/contracts";
 import { GelatoCore } from "@gelatonetwork/core";
 import { GAS_LIMIT_CETH_TO_AETH } from "../utils/constants";
+const MAKER_RESOLVER_JSON = require("../abi/MakerResolver.json");
 
 const {
   INSTA_LIST_ADDR,
   GELATO_CORE,
   MAKER_RESOLVER_ADDR
 } = addresses;
-const { InstaList, erc20 } = abis;
+const { InstaList } = abis;
 
 export const getUserAddress = async (provider) => {
   const signer = await provider.getSigner();
@@ -23,12 +24,12 @@ export const getMiniUserAddress = async (provider) => {
 export const getUserProxy = async (user) => {
   const signer = await user.getSigner();
   const userAddr = await signer.getAddress();
-  const instaIndexContract = new ethers.Contract(
+  const instaListContract = new ethers.Contract(
     INSTA_LIST_ADDR,
     InstaList.abi,
     signer
   );
-  return (await instaIndexContract.userLink(userAddr)).first;
+  return await instaListContract.accountAddr((await instaListContract.userLink(userAddr)).first);
 }
 
 export const getUserProxyContract = async (user) => {
@@ -66,20 +67,22 @@ export const getGelatoGasPrice = async (provider) => {
   return await gelatoGasPriceOracle.latestAnswer();
 };
 
-export const getTokenBalance = async (provider, token) => {
-  const tokenContract = new ethers.Contract(token, erc20, provider);
-  const userAddress = await getUserAddress(provider);
-  const userBalance = await tokenContract.balanceOf(userAddress);
+export const getTokenBalance = async (userAccount, token) => {
+  const tokenContract = new ethers.Contract(token, [
+    "function balanceOf(address) view returns (uint256)"
+  ], userAccount);
+  const userProxyAddress = await getUserProxy(userAccount);
+  const userBalance = await tokenContract.balanceOf(userProxyAddress);
   return userBalance;
 };
 
 export const getTokenBalanceString = async (
-  provider,
+  userAccount,
   token,
   tokenSymbol,
   decimals
 ) => {
-  const userBalance = await getTokenBalance(provider, token);
+  const userBalance = await getTokenBalance(userAccount, token);
   const userBalanceHumanReadable = ethers.utils.formatUnits(
     userBalance,
     decimals
@@ -87,27 +90,27 @@ export const getTokenBalanceString = async (
   return `${parseFloat(userBalanceHumanReadable).toFixed(8)} ${tokenSymbol}`;
 };
 
-export const getETHAVaultDebt = async (user) => {
-  const vault = await getVault(user, "ETH-A");
-  if (vault === undefined) return;
+export const getETHAVaultDebt = async (user, userAddr) => {
+  const vault = await getVault(user, userAddr, "ETH-A");
+  if (vault === undefined) return 0;
   return vault.debt;
 }
 
-export const getETHAVaultCols = async (user) => {
-  const vault = await getVault(user, "ETH-A");
-  if (vault === undefined) return;
+export const getETHAVaultCols = async (user, userAddr) => {
+  const vault = await getVault(user, userAddr, "ETH-A");
+  if (vault === undefined) return 0;
   return vault.collateral;
 }
 
-export const getETHBVaultDebt = async (user) => {
-  const vault = await getVault(user, "ETH-B");
-  if (vault === undefined) return;
+export const getETHBVaultDebt = async (user, userAddr) => {
+  const vault = await getVault(user, userAddr, "ETH-B");
+  if (vault === undefined) return 0;
   return vault.debt;
 }
 
-export const getETHBVaultCols = async (user) => {
-  const vault = await getVault(user, "ETH-B");
-  if (vault === undefined) return;
+export const getETHBVaultCols = async (user, userAddr) => {
+  const vault = await getVault(user, userAddr, "ETH-B");
+  if (vault === undefined) return 0;
   return vault.collateral;
 }
 
@@ -116,20 +119,19 @@ export const gelatoIsAuth = async (user) => {
   return userProxyContract.isAuth(GELATO_CORE);
 }
 
-export const userHaveETHAVault = async (user) => {
-  return await getVault(user, "ETH-A") !== undefined;
+export const userHaveETHAVault = async (user, userAddr) => {
+  return await getVault(user, userAddr, "ETH-A") !== undefined;
 }
 
-export const userHaveETHBVault = async (user) => {
-  return await getVault(user, "ETH-B") !== undefined;
+export const userHaveETHBVault = async (user, userAddr) => {
+  return await getVault(user, userAddr, "ETH-B") !== undefined;
 }
 
-export const getVault = async (user, colType) => {
+export const getVault = async (user, userAddr, colType) => {
   const signer = await user.getSigner();
-  const userAddr = await signer.getAddress();
   const makerResolverContract = new ethers.Contract(
     MAKER_RESOLVER_ADDR,
-    ["function getVaults(address owner) view returns (VaultData[] memory)"],
+    MAKER_RESOLVER_JSON.abi,
     signer
   );
 

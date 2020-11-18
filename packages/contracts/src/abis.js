@@ -16,6 +16,7 @@ const abis = {
   ConnectGelatoDataFullRefinanceMaker: ConnectGelatoDataFullRefinanceMaker,
   ConnectMaker: ConnectMaker,
   InstaIndex: InstaIndex,
+  InstaList: InstaList,
   PriceOracleResolver: PriceOracleResolver,
 };
 

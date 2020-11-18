@@ -11,20 +11,13 @@ export const InputCard = ({
   execFunc,
 }) => {
   const [loading, setLoading] = useState(false);
-
-  const handleChange = (event) => {
-    const newValue = event.target.value;
-    setInputs({
-      ...inputs,
-      [title]: newValue,
-    });
-  };
+  const [newValue, setNewValue] = useState();
 
   const handleExec = async () => {
     // Exec Transaction
     setLoading(true);
     try {
-      await execFunc();
+      await execFunc(newValue);
       setLoading(false);
     } catch (err) {
       console.log(err);
@@ -37,16 +30,15 @@ export const InputCard = ({
       <p>{`${title}`}</p>
       <input
         style={{ maxWidth: "80%" }}
-        type="text"
+        type="number"
         value={inputs[title]}
-        onChange={handleChange}
-        defaultValue={defaultValue}
+        onChange={e => setNewValue(e.target.value)}
       />
       {!loading && (
         <input
           style={{ marginTop: "8px" }}
           type="submit"
-          onClick={handleExec}
+          onClick={() => handleExec()}
           value={btnText}
         />
       )}

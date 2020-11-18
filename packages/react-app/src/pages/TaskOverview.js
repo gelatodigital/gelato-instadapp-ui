@@ -9,9 +9,9 @@ import styled from "styled-components";
 import { useQuery } from "@apollo/react-hooks";
 import GET_TASK_RECEIPT_WRAPPERS from "../graphql/gelato";
 import { getCancelTaskData } from "../services/payloadGeneration";
-import { dsProxyExecTx } from "../services/stateWrites";
+// import { dsProxyExecTx } from "../services/stateWrites";
 import { isKnownTask, sleep } from "../utils/helpers";
-const { GELATO_HANDLER } = addresses;
+const { CONDITION_VAULT_IS_SAFE_ADDR, CONDITION_DEBT_BRIDGE_AFFORDABLE_ADDR } = addresses;
 
 const Styles = styled.div`
   padding: 1rem;
@@ -62,6 +62,8 @@ const TaskOverview = ({ provider, userProxyAddress }) => {
       user: "",
       status: "",
       submitDate: "",
+      limit: "",
+      feeratio: "",
       execDate: "",
       execLink: "",
     },
@@ -83,6 +85,14 @@ const TaskOverview = ({ provider, userProxyAddress }) => {
         accessor: "submitDate",
       },
       {
+        Header: "Refinance Triggers Limit",
+        accessor: "limit",
+      },
+      {
+        Header: "Maximum Fees in Col Percent",
+        accessor: "feeratio",
+      },
+      {
         Header: "Exec Date",
         accessor: "execDate",
       },
@@ -97,6 +107,14 @@ const TaskOverview = ({ provider, userProxyAddress }) => {
     ],
     []
   );
+
+  const decodeAffordableRatio = async (data) => {
+    return String(((ethers.utils.RLP.decode(data))[1]).div(ethers.utils.parseUnits("1", 18)));
+  }
+
+  const decodeVaultUnsafe = async (data) => {
+    return String(((ethers.utils.RLP.decode(data))[3]).div(ethers.utils.parseUnits("1", 18)));
+  }
 
   const {
     getTableProps,
@@ -123,6 +141,8 @@ const TaskOverview = ({ provider, userProxyAddress }) => {
             Link
           </a>
         ),
+        limit: decodeVaultUnsafe(wrapper.taskReceipt.tasks.conditions[0].data),
+        feeratio: decodeAffordableRatio(wrapper.taskReceipt.tasks.conditions[1].data),
         execDate:
           wrapper.executionDate !== null
             ? new Date(wrapper.executionDate * 1000)
@@ -147,17 +167,17 @@ const TaskOverview = ({ provider, userProxyAddress }) => {
                   backgroundColor: "#4299e1",
                 }}
                 onClick={async () => {
-                  const cancelTaskData = getCancelTaskData(wrapper.taskReceipt);
-                  try {
-                    await dsProxyExecTx(
-                      provider,
-                      GELATO_HANDLER,
-                      cancelTaskData,
-                      0 // value
-                    );
-                  } catch (err) {
-                    console.log(err);
-                  }
+                  // const cancelTaskData = getCancelTaskData(wrapper.taskReceipt);
+                  // try {
+                  //   await dsProxyExecTx(
+                  //     provider,
+                  //     GELATO_HANDLER,
+                  //     cancelTaskData,
+                  //     0 // value
+                  //   );
+                  // } catch (err) {
+                  //   console.log(err);
+                  // }
                 }}
               >
                 Cancel
@@ -244,6 +264,8 @@ const TaskOverview = ({ provider, userProxyAddress }) => {
                 id: "",
                 status: "",
                 submitDate: "",
+                limit: "",
+                feeratio: "",
                 execDate: "",
                 execLink: "",
                 cancel: "",

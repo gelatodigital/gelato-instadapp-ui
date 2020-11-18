@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import ethers from "ethers";
 import {  ViewCard, CardWrapper, ButtonBlue } from "../components";
 import {
-  getVault
+  getVault,
+  getUserProxy
 } from "../services/stateReads";
 import {
   userProxyCast
@@ -11,7 +12,7 @@ import { addresses } from "@project/contracts";
 import {
   submitRefinanceMakerToMaker
 } from "../services/payloadGeneration";
-const { CONNECT_FULL_REFINANCE_ADDR } = addresses;
+const { CONNECT_GELATO_ADDR } = addresses;
 
 const SubmitTask = ({ userAccount }) => {
   const [inputs, setInputs] = useState({});
@@ -20,9 +21,10 @@ const SubmitTask = ({ userAccount }) => {
   // const addresses = [GELATO_CORE, GELATO_CORE];
 
   const inputsUpdates = async () => {
-    const vA = await getVault(userAccount, "ETH-A");
+    const userProxy = await getUserProxy(userAccount);
+    const vA = await getVault(userAccount, userProxy, "ETH-A");
     const vAId = vA !== undefined ? vA.id : 0;
-    const vB = await getVault(userAccount, "ETH-B");
+    const vB = await getVault(userAccount, userProxy, "ETH-B");
     const vBId = vB !== undefined ? vB.id : 0;
 
     setInputs({
@@ -54,9 +56,14 @@ const SubmitTask = ({ userAccount }) => {
   const submit = async () => {
     if(inputs.ratio === 0) return;
     if(inputs.limit === 0) return;
-    const data = await submitRefinanceMakerToMaker(userAccount, inputs.ratio, inputs.limit, inputs.vaultAId, inputs.vaultBId);
+    if(inputs.vaultAId === 0) return;
+    // console.log(String(ethers.utils.parseUnits(String(inputs.ratio), 15)));
+    // console.log(String(ethers.utils.parseUnits(String(inputs.limit), 18)));
+    // console.log(String(inputs.vaultAId));
+    // console.log(String(inputs.vaultBId));
+    const data = await submitRefinanceMakerToMaker(userAccount, ethers.utils.parseUnits(String(inputs.ratio), 15), ethers.utils.parseUnits(String(inputs.limit), 18), inputs.vaultAId, inputs.vaultBId);
 
-    await userProxyCast([CONNECT_FULL_REFINANCE_ADDR], [data], userAccount);
+    await userProxyCast([CONNECT_GELATO_ADDR], [data], userAccount);
   }
 
   useEffect(() => {

@@ -11,6 +11,9 @@ import {
   userHaveETHBVault,
   getVault,
   gelatoIsAuth,
+  getTokenBalance,
+  getETHAVaultDebt,
+  getETHAVaultCols
 } from "../services/stateReads";
 import { getMiniAddress } from "../utils/helpers";
 import { userProxyCast } from "../services/stateWrites";
@@ -21,7 +24,7 @@ import {
   borrowMakerVault,
   authorizeGelato
 } from "../services/payloadGeneration";
-const { CONNECT_MAKER_ADDR, CONNECT_GELATO_ADDR} = addresses;
+const { CONNECT_MAKER_ADDR, CONNECT_AUTH, DAI} = addresses;
 
 const User = ({ userAccount }) => {
   const [inputs, setInputs] = useState({});
@@ -29,9 +32,13 @@ const User = ({ userAccount }) => {
   const inputsUpdates = async () => {
     const miniUserAddress = await updateUserAddress();
     const userProxyAddress = await updateDsProxyAddress();
-    const userProxyHasVaultA = await userHaveETHAVault(userAccount);
-    const userProxyHasVaultB = await userHaveETHBVault(userAccount);
+    const userProxy = await getUserProxy(userAccount);
+    const userProxyHasVaultA = await userHaveETHAVault(userAccount, userProxy);
+    const userProxyHasVaultB = await userHaveETHBVault(userAccount, userProxy);
     const gelatoHasRight = await gelatoIsAuth(userAccount);
+    const vaultADebt = await getDisplayableValue(await getETHAVaultDebt(userAccount, userProxy));
+    const vaultALockedCol = await getDisplayableValue(await getETHAVaultCols(userAccount, userProxy));
+    const proxyDAIBalance = await getDisplayableValue(await getTokenBalance(userAccount, DAI));
 
     setInputs({
       ...inputs,
@@ -39,73 +46,78 @@ const User = ({ userAccount }) => {
       userAddress: miniUserAddress,
       vaultAExist: userProxyHasVaultA,
       vaultBExist: userProxyHasVaultB,
-      gelatoHasRight : gelatoHasRight,
+      gelatoHasRight: gelatoHasRight,
+      dsProxyBalance: proxyDAIBalance,
+      dsProxyDebt: vaultADebt,
+      dsProxyLockCol: vaultALockedCol,
+      userProxy: userProxy
     });
   };
 
   const updateDsProxyAddress = async () => {
-    const proxyAddress = await getUserProxy(userAccount);
-    return getMiniAddress(proxyAddress);
+    return getMiniAddress(await getUserProxy(userAccount));
   };
+
+  const getDisplayableValue = async (val) => {
+    if(ethers.utils.parseUnits("1", 18).gt(val)) return 0;
+
+    return Number(val.div(ethers.utils.parseUnits("1", 18)));
+  }
 
   const updateUserAddress = async () => {
     return await getMiniUserAddress(userAccount);
   };
-  const openVaultA = async () => {
-     if(userHaveETHAVault(userAccount)) return;
 
-     const data = await openMakerVault(userAccount, "ETH-A");
-     await userProxyCast([CONNECT_MAKER_ADDR], [data], userAccount);
+  const openVaultA = async () => {
+     if(await userHaveETHAVault(userAccount, inputs.userProxy)) return;
+
+     await userProxyCast([CONNECT_MAKER_ADDR], [await openMakerVault(userAccount, "ETH-A")], userAccount);
      setInputs({...inputs,
       vaultAExist: true,
     })
   };
 
   const openVaultB = async () => {
-    if(userHaveETHBVault(userAccount)) return;
+    if(await userHaveETHBVault(userAccount, inputs.userProxy)) return;
 
-    const data = await openMakerVault(userAccount, "ETH-B");
-     await userProxyCast([CONNECT_MAKER_ADDR], [data], userAccount);
+     await userProxyCast([CONNECT_MAKER_ADDR], [await openMakerVault(userAccount, "ETH-B")], userAccount);
      setInputs({...inputs,
       vaultBExist: true,
     })
-  }
+  };
 
-  const depositVaultA = async () => {
-    const value = inputs["Deposit Col for ETH-A Vault"];
+  const depositVaultA = async (newValue) => {
+    const deposit = newValue;
 
-    const valueInWei = ethers.utils.parseEther(value);
-    const vault = await getVault(userAccount, "ETH-A");
+    const vault = await getVault(userAccount, inputs.userProxy, "ETH-A");
     const vaultId = vault !== undefined ? vault.id : 0;
-    const data = await depositMakerVault(userAccount, valueInWei, vaultId);
+    const valueOfDeposit = ethers.utils.parseEther(String(deposit));
+    const data = await depositMakerVault(userAccount, valueOfDeposit, vaultId);
+
+    await userProxyCast([CONNECT_MAKER_ADDR], [data], userAccount, valueOfDeposit);
+  };
+
+  const borrowVaultA = async (newValue) => {
+    const borrow = newValue;
+
+    const vault = await getVault(userAccount, inputs.userProxy, "ETH-A");
+    const vaultId = vault !== undefined ? vault.id : 0;
+    const data = await borrowMakerVault(userAccount, ethers.utils.parseEther(borrow), vaultId);
 
     await userProxyCast([CONNECT_MAKER_ADDR], [data], userAccount);
-  }
-
-  const borrowVaultA = async () => {
-    const value = inputs["Borrow DAI from ETH-A Vault"];
-
-    const valueInWei = ethers.utils.parseEther(value);
-    const vault = await getVault(userAccount, "ETH-A");
-    const vaultId = vault !== undefined ? vault.id : 0;
-    const data = await borrowMakerVault(userAccount, valueInWei, vaultId);
-
-    await userProxyCast([CONNECT_MAKER_ADDR], [data], userAccount);
-  }
+  };
 
   const authorizeGelatoAction = async () => {
-    const data = await authorizeGelato(userAccount);
-
-    await userProxyCast([CONNECT_GELATO_ADDR], [data], userAccount);
+    await userProxyCast([CONNECT_AUTH], [await authorizeGelato(userAccount)], userAccount);
 
     setInputs({...inputs,
       gelatoHasRight: true,
     })
-  }
+  };
 
   useEffect(() => {
     inputsUpdates();
-  }, [inputs.gelatoBalance]);
+  });
 
   return (
     <>
@@ -118,9 +130,19 @@ const User = ({ userAccount }) => {
             title="Proxy Address"
             state={inputs.dsProxyAddress}
           ></ViewCardWrapper>
+        </CardWrapper>
+        <CardWrapper>
+        <ViewCardWrapper
+            title="Proxy Maker Debt"
+            state={inputs.dsProxyDebt}
+          ></ViewCardWrapper>
           <ViewCardWrapper
-            title="Proxy Address"
-            state={inputs.dsProxyAddress}
+            title="Proxy Maker Locked Col"
+            state={inputs.dsProxyLockCol}
+          ></ViewCardWrapper>
+          <ViewCardWrapper
+            title="Proxy DAI Token"
+            state={inputs.dsProxyBalance}
           ></ViewCardWrapper>
         </CardWrapper>
       <CardWrapper>

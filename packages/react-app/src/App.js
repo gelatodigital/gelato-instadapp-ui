@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Web3userAccount } from "@ethersproject/userAccounts";
+import { Web3Provider } from "@ethersproject/providers";
 import { useQuery } from "@apollo/react-hooks";
 import User from "./pages/User";
 import SubmitTask from "./pages/SubmitTask";
@@ -13,7 +13,7 @@ import { web3Modal, logoutOfWeb3Modal } from "./utils/web3Modal";
 import GET_TRANSFERS from "./graphql/subgraph";
 import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
 
-import { getDsProxyFromMakerRegistry } from "./services/stateReads";
+import { getUserProxy } from "./services/stateReads";
 
 function WalletButton({ userAccount, loadWeb3Modal }) {
   return (
@@ -40,11 +40,12 @@ function App() {
   /* Open wallet selection modal. */
   const loadWeb3Modal = useCallback(async () => {
     const newuserAccount = await web3Modal.connect();
-    setUserAccount(new Web3userAccount(newuserAccount));
+    //console.log((new ethers.providers.Web3Provider(newuserAccount)).getSigner());
+    setUserAccount((new Web3Provider(newuserAccount)));
   }, []);
 
   const checkIfUserHasProxy = async (userAccount) => {
-    const proxyAddress = await getDsProxyFromMakerRegistry(userAccount);
+    const proxyAddress = await getUserProxy(userAccount);
     if (
       ethers.utils.getAddress(proxyAddress) ===
       ethers.utils.getAddress(ethers.constants.AddressZero)

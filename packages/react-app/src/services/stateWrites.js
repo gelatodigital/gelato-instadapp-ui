@@ -18,12 +18,16 @@ export const deployProxyAction = async (user) => {
   );
   const gasPrice = await getGasNowGasPrice();
   const tx = await instaIndexContract.build(userAddr, 1, userAddr,{ gasPrice: gasPrice });
-  await tx.wait();
+  console.log(tx);
+  //await tx.wait();
 }
 
-export const userProxyCast = async (targets, datas, user) => {
-  const userAddr = await user.getAddress();
+export const userProxyCast = async (targets, datas, user, val) => {
+  const signer = await user.getSigner();
+  const userAddr = await signer.getAddress();
   const userProxy = await getUserProxyContract(user);
-  const tx = await userProxy.cast(targets, datas, userAddr, {gasLimit: 5000000});
-  await tx.await();
+  const options = Number(val) === 0 ? {gasLimit: 5000000} : {gasLimit: 5000000, value: val};
+  const tx = await userProxy.cast(targets, datas, userAddr, options);
+  console.log(tx);
+  //await tx.await();
 }

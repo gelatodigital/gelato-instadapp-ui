@@ -7,6 +7,7 @@ import {
   Action,
   Task
 } from "@gelatonetwork/core";
+const GelatoCoreLib = require("@gelatonetwork/core");
 
 const {
   EXTERNAL_PROVIDER_ADDR,
@@ -14,6 +15,7 @@ const {
   CONDITION_VAULT_IS_SAFE_ADDR,
   CONDITION_DEBT_BRIDGE_AFFORDABLE_ADDR,
   CONNECT_FULL_REFINANCE_ADDR,
+  PROVIDER_DSA_MODULE_ADDR,
   GELATO_CORE
 } = addresses;
 
@@ -77,10 +79,10 @@ export const submitRefinanceMakerToMaker = async (user, ratio, limit, vaultAId, 
       vaultAId, PRICE_ORACLE_ADDR,
       await abiEncodeWithSelector({
         abi: PriceOracleResolver.abi,
-        functionname: "getPrice",
+        functionname: "getMockPrice",
         inputs: [userAddr]
       }),
-      ratio
+      limit
     )
   });
 
@@ -92,9 +94,10 @@ export const submitRefinanceMakerToMaker = async (user, ratio, limit, vaultAId, 
     ConditionDebtBridgeIsAffordable.abi,
     signer
     );
+  
   const conditionDebtBridgeIsAffordableObj = new Condition({
     inst: CONDITION_DEBT_BRIDGE_AFFORDABLE_ADDR,
-    data: await conditionDebtBridgeIsAffordableContract.getConditionData(vaultAId, limit)
+    data: await conditionDebtBridgeIsAffordableContract.getConditionData(vaultAId, ratio)
   });
 
   //#endregion Condition Debt Bridge is Affordable
@@ -118,25 +121,28 @@ export const submitRefinanceMakerToMaker = async (user, ratio, limit, vaultAId, 
   const debtBridgeTask = new Task({
     conditions: [conditionMakerVaultUnsafeObj, conditionDebtBridgeIsAffordableObj],
     actions: [debtBridgeCalculationForFullRefinanceAction]
-  })
+  });
 
   //#endregion Debt Bridge Task Creation
 
   //#region Gelato Connector call cast
 
-  const connectGelatoData = await abiEncodeWithSelector({
+  const gelatoExternalProvider = new GelatoCoreLib.GelatoProvider({
+    addr: EXTERNAL_PROVIDER_ADDR, // Gelato Provider Address
+    module: PROVIDER_DSA_MODULE_ADDR, // Gelato DSA module
+  });
+
+  return await abiEncodeWithSelector({
     abi: ConnectGelato.abi,
     functionname: "submitTask",
     inputs: [
-      EXTERNAL_PROVIDER_ADDR,
+      gelatoExternalProvider,
       debtBridgeTask,
       0
     ],
   })
 
   //#endregion Gelato Connector call cast
-
-  return connectGelatoData;
 }
 
 export const getCancelTaskData = async (taskReceipt) => {
