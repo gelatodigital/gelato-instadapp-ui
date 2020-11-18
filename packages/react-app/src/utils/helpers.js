@@ -2,7 +2,9 @@ import ethers from "ethers";
 import { addresses, abis } from "@project/contracts";
 import { GelatoCore } from "@gelatonetwork/core";
 
-const { MULTI_SEND, GELATO_CORE, CETH_TO_AETH_REFINANCE_TASK_HASH } = addresses;
+import { TASK_HASH } from "./constants"
+
+const { MULTI_SEND, GELATO_CORE } = addresses;
 
 export const getMiniAddress = (account) => {
   return `${account.substring(0, 6)}...${account.substring(38, 42)}`;
@@ -81,7 +83,7 @@ export const getTaskHash = (task) => {
 
 // Returns true if task correspons to certain Task Hashes
 export const isKnownTask = (task) => {
-  return getTaskHash(task) === CETH_TO_AETH_REFINANCE_TASK_HASH;
+  return getTaskHash(task) === TASK_HASH;
 };
 
 export const sleep = (ms) => {

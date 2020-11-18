@@ -16,7 +16,6 @@ const addresses = {
   PROVIDER_DSA_MODULE_ADDR: "0x0C25452d20cdFeEd2983fa9b9b9Cf4E81D6f2fE2",
   DAI: "0x6b175474e89094c44da98b954eedeac495271d0f",
   PRICE_ORACLE_MAKER_PAYLOAD: "0x57de26a4",
-  TASK_SPEC_HASH: "0x78601319d570cce517d20cded5a04c20e9cd02d6cf054efaae3c8aea44dc809d",
 };
 
 export default addresses;
