@@ -97,3 +97,21 @@ export const abiEncodeWithSelector = async (args) => {
   let iface = new ethers.utils.Interface(args.abi);
   return iface.encodeFunctionData(args.functionname, args.inputs)
 }
+
+export const getFormattedNumber = async (val) => {
+  if(ethers.utils.parseUnits("1", 16).gt(val)) return 0;
+
+  return getFormattedToFixed2(val.div(ethers.utils.parseUnits("1", 18)));
+}
+
+export const getFormattedToFixed2 = (val) => {
+  return parseFloat(val).toFixed(2);
+}
+
+export const getABICoder = () => {
+  return new ethers.utils.AbiCoder();
+}
+
+export const toPercentFormat = (percent) => {
+  return getFormattedToFixed2(percent) + "%";
+}

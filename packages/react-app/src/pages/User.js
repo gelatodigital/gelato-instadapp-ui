@@ -15,7 +15,7 @@ import {
   getETHAVaultDebt,
   getETHAVaultCols
 } from "../services/stateReads";
-import { getMiniAddress } from "../utils/helpers";
+import { getMiniAddress, getFormattedNumber } from "../utils/helpers";
 import { userProxyCast } from "../services/stateWrites";
 import { addresses } from "@project/contracts";
 import {
@@ -36,9 +36,9 @@ const User = ({ userAccount }) => {
     const userProxyHasVaultA = await userHaveETHAVault(userAccount, userProxy);
     const userProxyHasVaultB = await userHaveETHBVault(userAccount, userProxy);
     const gelatoHasRight = await gelatoIsAuth(userAccount);
-    const vaultADebt = await getDisplayableValue(await getETHAVaultDebt(userAccount, userProxy));
-    const vaultALockedCol = await getDisplayableValue(await getETHAVaultCols(userAccount, userProxy));
-    const proxyDAIBalance = await getDisplayableValue(await getTokenBalance(userAccount, DAI));
+    const vaultADebt = await getFormattedNumber(await getETHAVaultDebt(userAccount, userProxy));
+    const vaultALockedCol = await getFormattedNumber(await getETHAVaultCols(userAccount, userProxy));
+    const proxyDAIBalance = await getFormattedNumber(await getTokenBalance(userAccount, DAI));
 
     setInputs({
       ...inputs,
@@ -58,12 +58,6 @@ const User = ({ userAccount }) => {
     return getMiniAddress(await getUserProxy(userAccount));
   };
 
-  const getDisplayableValue = async (val) => {
-    if(ethers.utils.parseUnits("1", 18).gt(val)) return 0;
-
-    return Number(val.div(ethers.utils.parseUnits("1", 18)));
-  }
-
   const updateUserAddress = async () => {
     return await getMiniUserAddress(userAccount);
   };
@@ -71,7 +65,7 @@ const User = ({ userAccount }) => {
   const openVaultA = async () => {
      if(await userHaveETHAVault(userAccount, inputs.userProxy)) return;
 
-     await userProxyCast([CONNECT_MAKER_ADDR], [await openMakerVault(userAccount, "ETH-A")], userAccount);
+     await userProxyCast([CONNECT_MAKER_ADDR], [await openMakerVault("ETH-A")], userAccount);
      setInputs({...inputs,
       vaultAExist: true,
     })
@@ -80,7 +74,7 @@ const User = ({ userAccount }) => {
   const openVaultB = async () => {
     if(await userHaveETHBVault(userAccount, inputs.userProxy)) return;
 
-     await userProxyCast([CONNECT_MAKER_ADDR], [await openMakerVault(userAccount, "ETH-B")], userAccount);
+     await userProxyCast([CONNECT_MAKER_ADDR], [await openMakerVault("ETH-B")], userAccount);
      setInputs({...inputs,
       vaultBExist: true,
     })
@@ -92,7 +86,7 @@ const User = ({ userAccount }) => {
     const vault = await getVault(userAccount, inputs.userProxy, "ETH-A");
     const vaultId = vault !== undefined ? vault.id : 0;
     const valueOfDeposit = ethers.utils.parseEther(String(deposit));
-    const data = await depositMakerVault(userAccount, valueOfDeposit, vaultId);
+    const data = await depositMakerVault(valueOfDeposit, vaultId);
 
     await userProxyCast([CONNECT_MAKER_ADDR], [data], userAccount, valueOfDeposit);
   };
@@ -102,13 +96,13 @@ const User = ({ userAccount }) => {
 
     const vault = await getVault(userAccount, inputs.userProxy, "ETH-A");
     const vaultId = vault !== undefined ? vault.id : 0;
-    const data = await borrowMakerVault(userAccount, ethers.utils.parseEther(borrow), vaultId);
+    const data = await borrowMakerVault(ethers.utils.parseEther(borrow), vaultId);
 
     await userProxyCast([CONNECT_MAKER_ADDR], [data], userAccount);
   };
 
   const authorizeGelatoAction = async () => {
-    await userProxyCast([CONNECT_AUTH], [await authorizeGelato(userAccount)], userAccount);
+    await userProxyCast([CONNECT_AUTH], [await authorizeGelato()], userAccount);
 
     setInputs({...inputs,
       gelatoHasRight: true,
@@ -121,6 +115,17 @@ const User = ({ userAccount }) => {
 
   return (
     <>
+      {!inputs.gelatoHasRight &&
+        (
+          <CardWrapper>
+            <ViewCardButton
+              title="Authorize Gelato"
+              action={authorizeGelatoAction}
+            >
+            </ViewCardButton>
+          </CardWrapper>
+        )
+      }
       <CardWrapper>
         <ViewCardWrapper
             title="User Address"
@@ -172,24 +177,17 @@ const User = ({ userAccount }) => {
             ></InputCard>
         )}
       </CardWrapper>
-      <CardWrapper>
-        {!inputs.vaultBExist &&
-            (<ViewCardButton
-              title="Create ETH-B Vault"
-              action={openVaultB}
-            >
-            </ViewCardButton>)
-        }
-      </CardWrapper>
-      <CardWrapper>
-        {!inputs.gelatoHasRight &&
-            (<ViewCardButton
-              title="Authorize Gelato"
-              action={authorizeGelatoAction}
-            >
-            </ViewCardButton>)
-        }
-      </CardWrapper>
+      {!inputs.vaultBExist &&
+        (
+          <CardWrapper>
+                <ViewCardButton
+                  title="Create ETH-B Vault"
+                  action={openVaultB}
+                >
+                </ViewCardButton>
+          </CardWrapper>
+        )
+      }
     </>
   );
 };

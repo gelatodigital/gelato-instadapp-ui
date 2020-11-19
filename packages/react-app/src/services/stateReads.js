@@ -2,15 +2,13 @@ import ethers from "ethers";
 import { getMiniAddress } from "../utils/helpers";
 import { addresses, abis } from "@project/contracts";
 import { GelatoCore } from "@gelatonetwork/core";
-import { GAS_LIMIT_CETH_TO_AETH } from "../utils/constants";
-const MAKER_RESOLVER_JSON = require("../abi/MakerResolver.json");
 
 const {
   INSTA_LIST_ADDR,
   GELATO_CORE,
   MAKER_RESOLVER_ADDR
 } = addresses;
-const { InstaList } = abis;
+const { InstaList, MakerResolver } = abis;
 
 export const getUserAddress = async (provider) => {
   const signer = await provider.getSigner();
@@ -26,7 +24,7 @@ export const getUserProxy = async (user) => {
   const userAddr = await signer.getAddress();
   const instaListContract = new ethers.Contract(
     INSTA_LIST_ADDR,
-    InstaList.abi,
+    InstaList,
     signer
   );
   return await instaListContract.accountAddr((await instaListContract.userLink(userAddr)).first);
@@ -131,7 +129,7 @@ export const getVault = async (user, userAddr, colType) => {
   const signer = await user.getSigner();
   const makerResolverContract = new ethers.Contract(
     MAKER_RESOLVER_ADDR,
-    MAKER_RESOLVER_JSON.abi,
+    MakerResolver,
     signer
   );
 

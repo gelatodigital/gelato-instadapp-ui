@@ -1,17 +1,14 @@
 import React, { useMemo, useState, useEffect } from "react";
 import ethers from "ethers";
-import { HyperLink, ViewCard, CardWrapper, ButtonBlue } from "../components";
-import { addresses, abis } from "@project/contracts";
+import { CardWrapper, ButtonBlue } from "../components";
 import { useTable, useSortBy } from "react-table";
 // Styled components
 import styled from "styled-components";
 // Graph QL Query
 import { useQuery } from "@apollo/react-hooks";
 import GET_TASK_RECEIPT_WRAPPERS from "../graphql/gelato";
-import { getCancelTaskData } from "../services/payloadGeneration";
-// import { dsProxyExecTx } from "../services/stateWrites";
-import { isKnownTask, sleep } from "../utils/helpers";
-const { CONDITION_VAULT_IS_SAFE_ADDR, CONDITION_DEBT_BRIDGE_AFFORDABLE_ADDR } = addresses;
+import { isKnownTask, sleep, getABICoder, toPercentFormat } from "../utils/helpers";
+
 
 const Styles = styled.div`
   padding: 1rem;
@@ -108,12 +105,12 @@ const TaskOverview = ({ provider, userProxyAddress }) => {
     []
   );
 
-  const decodeAffordableRatio = async (data) => {
-    return String(((ethers.utils.RLP.decode(data))[1]).div(ethers.utils.parseUnits("1", 18)));
+  const decodeAffordableRatio = (data) => {
+    return String((((getABICoder()).decode(["uint256", "uint256"],data))[1]).div(ethers.utils.parseUnits("1", 15)));
   }
 
-  const decodeVaultUnsafe = async (data) => {
-    return String(((ethers.utils.RLP.decode(data))[3]).div(ethers.utils.parseUnits("1", 18)));
+  const decodeVaultUnsafe = (data) => {
+    return String((((getABICoder()).decode(["uint256", "address", "bytes", "uint256"],data))[3]).div(ethers.utils.parseUnits("1", 18)));
   }
 
   const {
@@ -141,8 +138,8 @@ const TaskOverview = ({ provider, userProxyAddress }) => {
             Link
           </a>
         ),
-        limit: decodeVaultUnsafe(wrapper.taskReceipt.tasks.conditions[0].data),
-        feeratio: decodeAffordableRatio(wrapper.taskReceipt.tasks.conditions[1].data),
+        limit: toPercentFormat(decodeVaultUnsafe(wrapper.taskReceipt.tasks[0].conditions[0].data)),
+        feeratio: toPercentFormat((decodeAffordableRatio(wrapper.taskReceipt.tasks[0].conditions[1].data)/1000)*100),
         execDate:
           wrapper.executionDate !== null
             ? new Date(wrapper.executionDate * 1000)

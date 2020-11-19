@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { ViewCard } from "../components";
-import { dsProxyExecTx } from "../services/stateWrites";
 
 export const InputCard = ({
   title,

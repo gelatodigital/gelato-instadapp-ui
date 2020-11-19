@@ -7,8 +7,11 @@ import {
   Action,
   Task
 } from "@gelatonetwork/core";
+import {
+  PRICE_ORACLE_MAKER_PAYLOAD,
+  ETH
+} from "../utils/constants";
 const GelatoCoreLib = require("@gelatonetwork/core");
-
 const {
   EXTERNAL_PROVIDER_ADDR,
   PRICE_ORACLE_ADDR,
@@ -21,68 +24,66 @@ const {
 
 const { 
   ConnectGelato,
-  ConnectGelatoDataFullRefinanceMaker,
-  ConditionMakerVaultUnsafe,
-  ConditionDebtBridgeIsAffordable,
-  PriceOracleResolver,
-  ConnectMaker,
-  ConnectAuth 
 } = abis;
 
-export const openMakerVault = async (user, colType) => {
+export const openMakerVault = async (colType) => {
   return await abiEncodeWithSelector({
-    abi: ConnectMaker.abi,
+    abi: [
+      "function open(string colType) payable returns (uint)"
+    ],
     functionname: "open",
     inputs: [colType]
   });
 }
 
-export const depositMakerVault = async (user,value, vaultId) => {
+export const depositMakerVault = async (value, vaultId) => {
   return await abiEncodeWithSelector({
-    abi: ConnectMaker.abi,
+    abi: [
+      "function deposit(uint vault, uint amt, uint getId, uint setId) payable"
+    ],
     functionname: "deposit",
     inputs: [vaultId, value, 0, 0]
   });
 }
 
-export const borrowMakerVault = async (user, value, vaultId) => {
+export const borrowMakerVault = async (value, vaultId) => {
   return await abiEncodeWithSelector({
-    abi: ConnectMaker.abi,
+    abi: [
+      "function borrow(uint vault, uint amt, uint getId, uint setId) payable"
+    ],
     functionname: "borrow",
     inputs: [vaultId, value, 0, 0]
   });
 }
 
-export const authorizeGelato = async (user) => {
+export const authorizeGelato = async () => {
   return await abiEncodeWithSelector({
-    abi: ConnectAuth.abi,
+    abi: [
+      "function add(address authority) payable "
+    ],
     functionname: "add",
     inputs: [GELATO_CORE]
   });
 }
 
-export const submitRefinanceMakerToMaker = async (user, ratio, limit, vaultAId, vaultBId) => {
-  const ETH = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"; // For Demo purpose.
+export const submitRefinanceMakerToMaker = async (user, ratioLimit, minColRatio, vaultAId, vaultBId) => {
   const signer = await user.getSigner();
-  const userAddr = await signer.getAddress();
 
   //#region Condition Vault is Safe
 
   const conditionVaultIsSafeContract = new ethers.Contract(CONDITION_VAULT_IS_SAFE_ADDR,
-    ConditionMakerVaultUnsafe.abi,
+    [
+      "function getConditionData(uint256 _vaultId, address _priceOracle, bytes _oraclePayload, uint256 _minColRatio) pure returns (bytes)"
+    ],
     signer
     );
-  
+
   const conditionMakerVaultUnsafeObj = new Condition({
     inst: CONDITION_VAULT_IS_SAFE_ADDR,
     data: await conditionVaultIsSafeContract.getConditionData(
       vaultAId, PRICE_ORACLE_ADDR,
-      await abiEncodeWithSelector({
-        abi: PriceOracleResolver.abi,
-        functionname: "getMockPrice",
-        inputs: [userAddr]
-      }),
-      limit
+      PRICE_ORACLE_MAKER_PAYLOAD,
+      minColRatio
     )
   });
 
@@ -91,13 +92,15 @@ export const submitRefinanceMakerToMaker = async (user, ratio, limit, vaultAId, 
   //#region Condition Debt Bridge is Affordable
 
   const conditionDebtBridgeIsAffordableContract = new ethers.Contract(CONDITION_DEBT_BRIDGE_AFFORDABLE_ADDR,
-    ConditionDebtBridgeIsAffordable.abi,
+    [
+      "function getConditionData(uint256 _vaultId, uint256 _ratioLimit) pure returns (bytes)"
+    ],
     signer
     );
   
   const conditionDebtBridgeIsAffordableObj = new Condition({
     inst: CONDITION_DEBT_BRIDGE_AFFORDABLE_ADDR,
-    data: await conditionDebtBridgeIsAffordableContract.getConditionData(vaultAId, ratio)
+    data: await conditionDebtBridgeIsAffordableContract.getConditionData(vaultAId, ratioLimit)
   });
 
   //#endregion Condition Debt Bridge is Affordable
@@ -107,7 +110,9 @@ export const submitRefinanceMakerToMaker = async (user, ratio, limit, vaultAId, 
   const debtBridgeCalculationForFullRefinanceAction = new Action({
     addr: CONNECT_FULL_REFINANCE_ADDR,
     data: await abiEncodeWithSelector({
-      abi : ConnectGelatoDataFullRefinanceMaker.abi,
+      abi : [
+        "function getDataAndCastMakerToMaker(uint256 _vaultAId, uint256 _vaultBId, address _colToken, string _colType) payable"
+      ],
       functionname: "getDataAndCastMakerToMaker",
       inputs: [vaultAId, vaultBId, ETH, "ETH-B"]
     }),
@@ -123,6 +128,8 @@ export const submitRefinanceMakerToMaker = async (user, ratio, limit, vaultAId, 
     actions: [debtBridgeCalculationForFullRefinanceAction]
   });
 
+  //getTaskHash(debtBridgeTask)
+
   //#endregion Debt Bridge Task Creation
 
   //#region Gelato Connector call cast
@@ -133,7 +140,7 @@ export const submitRefinanceMakerToMaker = async (user, ratio, limit, vaultAId, 
   });
 
   return await abiEncodeWithSelector({
-    abi: ConnectGelato.abi,
+    abi: ConnectGelato,
     functionname: "submitTask",
     inputs: [
       gelatoExternalProvider,
@@ -144,6 +151,35 @@ export const submitRefinanceMakerToMaker = async (user, ratio, limit, vaultAId, 
 
   //#endregion Gelato Connector call cast
 }
+
+export const getTaskHash = (task) => {
+  const conditionsWithoutData = [];
+  for (let condition of task.conditions) {
+    conditionsWithoutData.push(condition.inst);
+  }
+  const actionsWithoutData = [];
+  for (let action of task.actions) {
+    actionsWithoutData.push({
+      addr: action.addr,
+      operation: parseInt(action.operation),
+      dataFlow: parseInt(action.dataFlow),
+      value: parseInt(action.value) === 0 ? false : true,
+      termsOkCheck: action.termsOkCheck,
+    });
+  }
+  const encodedData = ethers.utils.defaultAbiCoder.encode(
+    [
+      "address[] conditionAddresses",
+      "tuple(address addr, uint8 operation, uint8 dataFlow, bool value, bool termsOkCheck)[] noDataActions",
+    ],
+    [conditionsWithoutData, actionsWithoutData]
+  );
+
+  const taskIdentifier = ethers.utils.keccak256(encodedData);
+  console.log(taskIdentifier);
+
+  return taskIdentifier;
+};
 
 export const getCancelTaskData = async (taskReceipt) => {
   const iGelatoHandler = new ethers.utils.Interface([

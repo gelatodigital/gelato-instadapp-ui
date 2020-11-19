@@ -15,10 +15,10 @@ import {
 const { CONNECT_GELATO_ADDR } = addresses;
 
 const SubmitTask = ({ userAccount }) => {
+  const [loading, setLoading] = useState(false);
   const [inputs, setInputs] = useState({});
-  // const inputTitles = ["Deposit ETH on Gelato", "Withdraw ETH from Gelato"];
-  // const buttonTitles = ["Deposit", "Withdraw"];
-  // const addresses = [GELATO_CORE, GELATO_CORE];
+  const [ratio, setRatio] = useState();
+  const [limit, setLimit] = useState();
 
   const inputsUpdates = async () => {
     const userProxy = await getUserProxy(userAccount);
@@ -29,8 +29,6 @@ const SubmitTask = ({ userAccount }) => {
 
     setInputs({
       ...inputs,
-      ratio : 0,
-      limit : 0,
       vaultAId: vAId,
       vaultBId: vBId,
       defaultValue: 0
@@ -39,63 +37,75 @@ const SubmitTask = ({ userAccount }) => {
 
   const handleRatioChange = async (event) => {
     const newValue = event.target.value;
-    setInputs({
-      ...inputs,
-      ratio: newValue,
-    });
+    setRatio(newValue);
   }
 
   const handleLimitChange = async (event) => {
     const newValue = event.target.value;
-    setInputs({
-      ...inputs,
-      limit: newValue,
-    });
+    setLimit(newValue);
   }
 
   const submit = async () => {
-    if(inputs.ratio === 0) return;
-    if(inputs.limit === 0) return;
+    if(ratio === 0) return;
+    if(limit === 0) return;
     if(inputs.vaultAId === 0) return;
-    // console.log(String(ethers.utils.parseUnits(String(inputs.ratio), 15)));
-    // console.log(String(ethers.utils.parseUnits(String(inputs.limit), 18)));
-    // console.log(String(inputs.vaultAId));
-    // console.log(String(inputs.vaultBId));
-    const data = await submitRefinanceMakerToMaker(userAccount, ethers.utils.parseUnits(String(inputs.ratio), 15), ethers.utils.parseUnits(String(inputs.limit), 18), inputs.vaultAId, inputs.vaultBId);
+    
+    const data = await submitRefinanceMakerToMaker(userAccount, ethers.utils.parseUnits(String(ratio), 15), ethers.utils.parseUnits(String(limit), 18), inputs.vaultAId, inputs.vaultBId);
 
     await userProxyCast([CONNECT_GELATO_ADDR], [data], userAccount);
   }
 
   useEffect(() => {
     inputsUpdates();
-  }, []);
+  });
 
   return (
     <>
       <CardWrapper>
       <ViewCard>
+        <label style={{ margin: "10px" }}>
+          Maximum Fees in Col Percent
+        </label>
+        
         <input
           style={{ maxWidth: "80%" }}
-          type="text"
-          value={inputs.ratio}
+          type="number"
+          value={ratio}
           onChange={handleRatioChange}
           defaultValue={inputs.defaultValue}
         />
       </ViewCard>
 
       <ViewCard>
+        <label style={{ margin: "10px" }}>
+          Refinance Triggers Col Ratio in Percent
+        </label>
+
         <input
             style={{ maxWidth: "80%" }}
-            type="text"
-            value={inputs.limit}
+            type="number"
+            value={limit}
             onChange={handleLimitChange}
             defaultValue={inputs.defaultValue}
           />
       </ViewCard>
-      <ViewCard>
-            <ButtonBlue onClick={async () => {await submit();}}>
-                Submit Task
-            </ButtonBlue>
+      
+        <ViewCard>
+          {!loading && (
+              <ButtonBlue onClick={async () => {
+                  setLoading(true);
+                  try {
+                    await submit();
+                    setLoading(false);
+                  } catch {
+                    setLoading(false);
+                  }
+                }}
+              >
+                  Submit Task
+              </ButtonBlue>
+          )}
+          {loading && <p>waiting...</p>}
         </ViewCard>
       </CardWrapper>
     </>
