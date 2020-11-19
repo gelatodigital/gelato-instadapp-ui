@@ -1,14 +1,22 @@
 import React, { useMemo, useState, useEffect } from "react";
 import ethers from "ethers";
-import { CardWrapper, ButtonBlue } from "../components";
+import { CardWrapper, Button } from "../components";
 import { useTable, useSortBy } from "react-table";
 // Styled components
 import styled from "styled-components";
 // Graph QL Query
 import { useQuery } from "@apollo/react-hooks";
 import GET_TASK_RECEIPT_WRAPPERS from "../graphql/gelato";
-import { isKnownTask, sleep, getABICoder, toPercentFormat } from "../utils/helpers";
-
+import {
+  isKnownTask,
+  sleep,
+  getABICoder,
+  toPercentFormat,
+} from "../utils/helpers";
+import { getCancelTaskData } from "../services/payloadGeneration";
+import { userProxyCast } from "../services/stateWrites";
+import { addresses } from "@project/contracts";
+const { CONNECT_GELATO_ADDR } = addresses;
 
 const Styles = styled.div`
   padding: 1rem;
@@ -42,7 +50,7 @@ const Styles = styled.div`
   }
 `;
 
-const TaskOverview = ({ provider, userProxyAddress }) => {
+const TaskOverview = ({ userAccount, userProxyAddress }) => {
   const { loading, error, data, refetch, fetchMore } = useQuery(
     GET_TASK_RECEIPT_WRAPPERS,
     {
@@ -82,11 +90,11 @@ const TaskOverview = ({ provider, userProxyAddress }) => {
         accessor: "submitDate",
       },
       {
-        Header: "Refinance Triggers Limit",
+        Header: "Col % triggering ref",
         accessor: "limit",
       },
       {
-        Header: "Maximum Fees in Col Percent",
+        Header: "Maximum Fees in Col %",
         accessor: "feeratio",
       },
       {
@@ -106,12 +114,21 @@ const TaskOverview = ({ provider, userProxyAddress }) => {
   );
 
   const decodeAffordableRatio = (data) => {
-    return String((((getABICoder()).decode(["uint256", "uint256"],data))[1]).div(ethers.utils.parseUnits("1", 15)));
-  }
+    return String(
+      getABICoder()
+        .decode(["uint256", "uint256"], data)[1]
+        .mul(ethers.BigNumber.from("100"))
+        .div(ethers.utils.parseUnits("1", 18))
+    );
+  };
 
   const decodeVaultUnsafe = (data) => {
-    return String((((getABICoder()).decode(["uint256", "address", "bytes", "uint256"],data))[3]).div(ethers.utils.parseUnits("1", 18)));
-  }
+    return String(
+      getABICoder()
+        .decode(["uint256", "address", "bytes", "uint256"], data)[3]
+        .div(ethers.utils.parseUnits("1", 18))
+    );
+  };
 
   const {
     getTableProps,
@@ -121,7 +138,7 @@ const TaskOverview = ({ provider, userProxyAddress }) => {
     prepareRow,
   } = useTable({ columns, data: rowData }, useSortBy);
 
-  const createRowData = (provider, data) => {
+  const createRowData = (userAccount, data) => {
     const newRows = [];
     // Filter all tasks by known Tash Hashes
     for (let wrapper of data.taskReceiptWrappers) {
@@ -130,6 +147,13 @@ const TaskOverview = ({ provider, userProxyAddress }) => {
 
       const execUrl = `https://etherscan.io/tx/${wrapper.executionHash}`;
       const submitUrl = `https://etherscan.io/tx/${wrapper.submissionHash}`;
+      const feeRatio = toPercentFormat(
+        decodeAffordableRatio(wrapper.taskReceipt.tasks[0].conditions[1].data)
+      );
+      console.log(feeRatio);
+      console.log(
+        decodeAffordableRatio(wrapper.taskReceipt.tasks[0].conditions[1].data)
+      );
       newRows.push({
         id: parseInt(wrapper.id),
         status: wrapper.status,
@@ -138,8 +162,12 @@ const TaskOverview = ({ provider, userProxyAddress }) => {
             Link
           </a>
         ),
-        limit: toPercentFormat(decodeVaultUnsafe(wrapper.taskReceipt.tasks[0].conditions[0].data)),
-        feeratio: toPercentFormat((decodeAffordableRatio(wrapper.taskReceipt.tasks[0].conditions[1].data)/1000)*100),
+        limit: toPercentFormat(
+          decodeVaultUnsafe(wrapper.taskReceipt.tasks[0].conditions[0].data)
+        ),
+        feeratio: toPercentFormat(
+          decodeAffordableRatio(wrapper.taskReceipt.tasks[0].conditions[1].data)
+        ),
         execDate:
           wrapper.executionDate !== null
             ? new Date(wrapper.executionDate * 1000)
@@ -164,17 +192,18 @@ const TaskOverview = ({ provider, userProxyAddress }) => {
                   backgroundColor: "#4299e1",
                 }}
                 onClick={async () => {
-                  // const cancelTaskData = getCancelTaskData(wrapper.taskReceipt);
-                  // try {
-                  //   await dsProxyExecTx(
-                  //     provider,
-                  //     GELATO_HANDLER,
-                  //     cancelTaskData,
-                  //     0 // value
-                  //   );
-                  // } catch (err) {
-                  //   console.log(err);
-                  // }
+                  const cancelTaskData = getCancelTaskData(wrapper.taskReceipt);
+                  try {
+                    await userProxyCast(
+                      [CONNECT_GELATO_ADDR],
+                      [cancelTaskData],
+                      userAccount,
+                      0,
+                      300000
+                    );
+                  } catch (err) {
+                    console.log(err);
+                  }
                 }}
               >
                 Cancel
@@ -190,7 +219,7 @@ const TaskOverview = ({ provider, userProxyAddress }) => {
 
   useEffect(() => {
     if (data) {
-      const newRows = createRowData(provider, data);
+      const newRows = createRowData(userAccount, data);
       if (newRows.length > 0) setRowData(newRows);
     }
   }, [data]);
@@ -253,7 +282,8 @@ const TaskOverview = ({ provider, userProxyAddress }) => {
             </tbody>
           </table>
         </Styles>
-        <ButtonBlue
+        <Button
+          background="#4299e1"
           onClick={async () => {
             refetch();
             setRowData([
@@ -269,11 +299,11 @@ const TaskOverview = ({ provider, userProxyAddress }) => {
               },
             ]);
             await sleep(1000);
-            setRowData(createRowData(provider, data));
+            setRowData(createRowData(userAccount, data));
           }}
         >
           Refresh
-        </ButtonBlue>
+        </Button>
       </CardWrapper>
     </>
   );

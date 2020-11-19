@@ -2,7 +2,7 @@ import ethers from "ethers";
 import { addresses, abis } from "@project/contracts";
 import { GelatoCore } from "@gelatonetwork/core";
 
-import { TASK_HASH } from "./constants"
+import { TASK_HASH } from "./constants";
 
 const { MULTI_SEND, GELATO_CORE } = addresses;
 
@@ -95,23 +95,23 @@ export const sleep = (ms) => {
 
 export const abiEncodeWithSelector = async (args) => {
   let iface = new ethers.utils.Interface(args.abi);
-  return iface.encodeFunctionData(args.functionname, args.inputs)
-}
+  return iface.encodeFunctionData(args.functionname, args.inputs);
+};
 
 export const getFormattedNumber = async (val) => {
-  if(ethers.utils.parseUnits("1", 16).gt(val)) return 0;
+  if (ethers.utils.parseUnits("1", 16).gt(val)) return 0;
 
-  return getFormattedToFixed2(val.div(ethers.utils.parseUnits("1", 18)));
-}
+  return getFormattedToFixed2(ethers.utils.formatUnits(val, "18"));
+};
 
 export const getFormattedToFixed2 = (val) => {
   return parseFloat(val).toFixed(2);
-}
+};
 
 export const getABICoder = () => {
   return new ethers.utils.AbiCoder();
-}
+};
 
 export const toPercentFormat = (percent) => {
   return getFormattedToFixed2(percent) + "%";
-}
+};

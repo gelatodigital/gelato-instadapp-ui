@@ -1,14 +1,18 @@
 import React from "react";
-import { ButtonBlue, ViewCard } from "../components";
+import { Button, ViewCard } from "../components";
 
-const ViewCardButton = ({title, action}) => {
-    return (
-        <ViewCard>
-            <ButtonBlue onClick={async () => {await action();}}>
-                {title}
-            </ButtonBlue>
-        </ViewCard>
-    )
-}
+const ViewCardButton = ({ title, action }) => {
+  return (
+    <ViewCard>
+      <Button
+        onClick={async () => {
+          await action();
+        }}
+      >
+        {title}
+      </Button>
+    </ViewCard>
+  );
+};
 
 export default ViewCardButton;

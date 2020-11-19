@@ -8,6 +8,17 @@ export const Header = styled.header`
   align-items: center;
   justify-content: flex-end;
   color: white;
+  .gelato-logo {
+    margin-left: 20px;
+    margin-right: auto;
+    text-decoration: "none";
+    color: white;
+    cursor: pointer;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+  }
 `;
 
 export const Body = styled.body`
@@ -64,7 +75,7 @@ export const HyperLink = styled.a.attrs({
 `;
 
 export const Button = styled.button`
-  background-color: white;
+  background-color: ${(props) => props.background};
   border: none;
   border-radius: 8px;
   color: #282c34;
@@ -81,20 +92,38 @@ export const Button = styled.button`
   }
 `;
 
-export const ButtonBlue = styled.button`
-  background-color: #4299e1;
-  border: none;
-  border-radius: 8px;
-  color: white;
-  cursor: pointer;
-  font-size: 16px;
-  text-align: center;
-  text-decoration: none;
-  margin: 0px 20px;
-  padding: 12px 24px;
+// export const ButtonBlue = styled.button`
+//   background-color:: ${(props) => props.backgroundColor};
+//   border: none;
+//   border-radius: 8px;
+//   color: white;
+//   cursor: pointer;
+//   font-size: 16px;
+//   text-align: center;
+//   text-decoration: none;
+//   margin: 0px 20px;
+//   padding: 12px 24px;
 
-  ${(props) => props.hidden && "hidden"} :focus {
-    border: none;
-    outline: none;
-  }
-`;
+//   ${(props) => props.hidden && "hidden"} :focus {
+//     border: none;
+//     outline: none;
+//   }
+// `;
+
+// export const ButtonBlue = styled.button`
+//   background-color: #4299e1;
+//   border: none;
+//   border-radius: 8px;
+//   color: white;
+//   cursor: pointer;
+//   font-size: 16px;
+//   text-align: center;
+//   text-decoration: none;
+//   margin: 0px 20px;
+//   padding: 12px 24px;
+
+//   ${(props) => props.hidden && "hidden"} :focus {
+//     border: none;
+//     outline: none;
+//   }
+// `;

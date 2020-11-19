@@ -3,11 +3,7 @@ import { getMiniAddress } from "../utils/helpers";
 import { addresses, abis } from "@project/contracts";
 import { GelatoCore } from "@gelatonetwork/core";
 
-const {
-  INSTA_LIST_ADDR,
-  GELATO_CORE,
-  MAKER_RESOLVER_ADDR
-} = addresses;
+const { INSTA_LIST_ADDR, GELATO_CORE, MAKER_RESOLVER_ADDR } = addresses;
 const { InstaList, MakerResolver } = abis;
 
 export const getUserAddress = async (provider) => {
@@ -27,8 +23,10 @@ export const getUserProxy = async (user) => {
     InstaList,
     signer
   );
-  return await instaListContract.accountAddr((await instaListContract.userLink(userAddr)).first);
-}
+  return await instaListContract.accountAddr(
+    (await instaListContract.userLink(userAddr)).first
+  );
+};
 
 export const getUserProxyContract = async (user) => {
   const signer = await user.getSigner();
@@ -40,8 +38,8 @@ export const getUserProxyContract = async (user) => {
       "function isAuth(address user) view returns (bool)",
     ],
     signer
-  )
-}
+  );
+};
 
 export const getGelatoGasPrice = async (provider) => {
   const gelatoCoreContract = new ethers.Contract(
@@ -66,9 +64,11 @@ export const getGelatoGasPrice = async (provider) => {
 };
 
 export const getTokenBalance = async (userAccount, token) => {
-  const tokenContract = new ethers.Contract(token, [
-    "function balanceOf(address) view returns (uint256)"
-  ], userAccount);
+  const tokenContract = new ethers.Contract(
+    token,
+    ["function balanceOf(address) view returns (uint256)"],
+    userAccount
+  );
   const userProxyAddress = await getUserProxy(userAccount);
   const userBalance = await tokenContract.balanceOf(userProxyAddress);
   return userBalance;
@@ -92,38 +92,39 @@ export const getETHAVaultDebt = async (user, userAddr) => {
   const vault = await getVault(user, userAddr, "ETH-A");
   if (vault === undefined) return 0;
   return vault.debt;
-}
+};
 
 export const getETHAVaultCols = async (user, userAddr) => {
   const vault = await getVault(user, userAddr, "ETH-A");
   if (vault === undefined) return 0;
+  console.log(vault);
   return vault.collateral;
-}
+};
 
 export const getETHBVaultDebt = async (user, userAddr) => {
   const vault = await getVault(user, userAddr, "ETH-B");
   if (vault === undefined) return 0;
   return vault.debt;
-}
+};
 
 export const getETHBVaultCols = async (user, userAddr) => {
   const vault = await getVault(user, userAddr, "ETH-B");
   if (vault === undefined) return 0;
   return vault.collateral;
-}
+};
 
 export const gelatoIsAuth = async (user) => {
   const userProxyContract = await getUserProxyContract(user);
   return userProxyContract.isAuth(GELATO_CORE);
-}
+};
 
 export const userHaveETHAVault = async (user, userAddr) => {
-  return await getVault(user, userAddr, "ETH-A") !== undefined;
-}
+  return (await getVault(user, userAddr, "ETH-A")) !== undefined;
+};
 
 export const userHaveETHBVault = async (user, userAddr) => {
-  return await getVault(user, userAddr, "ETH-B") !== undefined;
-}
+  return (await getVault(user, userAddr, "ETH-B")) !== undefined;
+};
 
 export const getVault = async (user, userAddr, colType) => {
   const signer = await user.getSigner();
@@ -134,10 +135,10 @@ export const getVault = async (user, userAddr, colType) => {
   );
 
   let vaults = await makerResolverContract.getVaults(userAddr);
-  for(let i=0; i<vaults.length; i++) {
-    if(vaults[i].colType === colType) {
+  for (let i = 0; i < vaults.length; i++) {
+    if (vaults[i].colType === colType) {
       return vaults[i];
     }
   }
   return undefined;
-}
+};

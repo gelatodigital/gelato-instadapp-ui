@@ -9,6 +9,7 @@
   ],
   "private": true,
   "scripts": {
+    "hardhat:run-fork": "yarn workspace @project/hardhat run-fork",
     "subgraph:auth": "yarn workspace @project/subgraph auth",
     "subgraph:codegen": "yarn workspace @project/subgraph codegen",
     "subgraph:build": "yarn workspace @project/subgraph build",

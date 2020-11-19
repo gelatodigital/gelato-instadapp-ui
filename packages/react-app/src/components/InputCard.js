@@ -31,7 +31,7 @@ export const InputCard = ({
         style={{ maxWidth: "80%" }}
         type="number"
         value={inputs[title]}
-        onChange={e => setNewValue(e.target.value)}
+        onChange={(e) => setNewValue(e.target.value)}
       />
       {!loading && (
         <input
