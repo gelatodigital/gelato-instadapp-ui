@@ -39,9 +39,6 @@ const SubmitTask = ({ userAccount }) => {
   };
 
   const submit = async () => {
-    console.log(ratio);
-    console.log(limit);
-    console.log(inputs.vaultAId);
     if (ratio === 0) return;
     if (limit === 0) return;
     if (parseInt(inputs.vaultAId) === 0) return;

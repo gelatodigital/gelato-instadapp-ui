@@ -150,10 +150,6 @@ const TaskOverview = ({ userAccount, userProxyAddress }) => {
       const feeRatio = toPercentFormat(
         decodeAffordableRatio(wrapper.taskReceipt.tasks[0].conditions[1].data)
       );
-      console.log(feeRatio);
-      console.log(
-        decodeAffordableRatio(wrapper.taskReceipt.tasks[0].conditions[1].data)
-      );
       newRows.push({
         id: parseInt(wrapper.id),
         status: wrapper.status,

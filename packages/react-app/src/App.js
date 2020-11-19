@@ -83,12 +83,7 @@ function App() {
     <div>
       <Router>
         <Header>
-          <div
-            className="gelato-logo"
-            onClick={() => {
-              console.log("Gelatino");
-            }}
-          >
+          <div className="gelato-logo">
             <GelatoLogo></GelatoLogo>
           </div>
           {userAccount && hasProxy && (

@@ -91,39 +91,3 @@ export const Button = styled.button`
     outline: none;
   }
 `;
-
-// export const ButtonBlue = styled.button`
-//   background-color:: ${(props) => props.backgroundColor};
-//   border: none;
-//   border-radius: 8px;
-//   color: white;
-//   cursor: pointer;
-//   font-size: 16px;
-//   text-align: center;
-//   text-decoration: none;
-//   margin: 0px 20px;
-//   padding: 12px 24px;
-
-//   ${(props) => props.hidden && "hidden"} :focus {
-//     border: none;
-//     outline: none;
-//   }
-// `;
-
-// export const ButtonBlue = styled.button`
-//   background-color: #4299e1;
-//   border: none;
-//   border-radius: 8px;
-//   color: white;
-//   cursor: pointer;
-//   font-size: 16px;
-//   text-align: center;
-//   text-decoration: none;
-//   margin: 0px 20px;
-//   padding: 12px 24px;
-
-//   ${(props) => props.hidden && "hidden"} :focus {
-//     border: none;
-//     outline: none;
-//   }
-// `;
