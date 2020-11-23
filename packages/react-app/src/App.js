@@ -6,12 +6,20 @@ import SubmitTask from "./pages/SubmitTask";
 import DeployProxy from "./pages/DeployProxy";
 import TaskOverview from "./pages/TaskOverview";
 import ethers from "ethers";
-import { Body, Button, Header, HyperLink } from "./components";
+import GelatoLogo from "./components/Logo";
+
+import { Body, Button, Header, HyperLink, CardWrapper } from "./components";
 
 import { web3Modal, logoutOfWeb3Modal } from "./utils/web3Modal";
 
 import GET_TRANSFERS from "./graphql/subgraph";
-import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Switch,
+  Route,
+  Link,
+  Redirect,
+} from "react-router-dom";
 
 import { getUserProxy } from "./services/stateReads";
 
@@ -41,7 +49,7 @@ function App() {
   const loadWeb3Modal = useCallback(async () => {
     const newuserAccount = await web3Modal.connect();
     //console.log((new ethers.providers.Web3Provider(newuserAccount)).getSigner());
-    setUserAccount((new Web3Provider(newuserAccount)));
+    setUserAccount(new Web3Provider(newuserAccount));
   }, []);
 
   const checkIfUserHasProxy = async (userAccount) => {
@@ -75,6 +83,9 @@ function App() {
     <div>
       <Router>
         <Header>
+          <div className="gelato-logo">
+            <GelatoLogo></GelatoLogo>
+          </div>
           {userAccount && hasProxy && (
             <>
               <HyperLink>
@@ -100,48 +111,49 @@ function App() {
               </HyperLink>
             </>
           )}
-          <WalletButton userAccount={userAccount} loadWeb3Modal={loadWeb3Modal} />
+          <WalletButton
+            userAccount={userAccount}
+            loadWeb3Modal={loadWeb3Modal}
+          />
         </Header>
         <Body>
           <Switch>
-            <Route path="/submit-task">
-              {userAccount && hasProxy && (
-                <SubmitTask userAccount={userAccount}></SubmitTask>
-              )}
-              {userAccount && !hasProxy && (
+            {!userAccount && !hasProxy && (
+              <Route path="/">
+                <CardWrapper>
+                  <h3 style={{ color: "#4299e1" }}>Please login</h3>
+                </CardWrapper>
+              </Route>
+            )}
+            {userAccount && !hasProxy && (
+              <Route path="/">
                 <DeployProxy
                   setHasProxy={setHasProxy}
                   userAccount={userAccount}
                 ></DeployProxy>
-              )}
-            </Route>
-            <Route path="/task-overview">
-              {userAccount && hasProxy && proxyAddress && (
-                <TaskOverview
-                  userAccount={userAccount}
-                  userProxyAddress={proxyAddress}
-                ></TaskOverview>
-              )}
-              {userAccount && !hasProxy && (
-                <DeployProxy
-                  setHasProxy={setHasProxy}
-                  userAccount={userAccount}
-                ></DeployProxy>
-              )}
-            </Route>
-            <Route path="/">
-              {userAccount && hasProxy && (
-                <User
-                  userAccount={userAccount}
-                ></User>
-              )}
-              {userAccount && !hasProxy && (
-                <DeployProxy
-                  setHasProxy={setHasProxy}
-                  userAccount={userAccount}
-                ></DeployProxy>
-              )}
-            </Route>
+              </Route>
+            )}
+            {userAccount && hasProxy && (
+              <>
+                <Route path="/submit-task">
+                  <SubmitTask userAccount={userAccount}></SubmitTask>
+                </Route>
+                <Route path="/task-overview">
+                  {userAccount && hasProxy && proxyAddress && (
+                    <TaskOverview
+                      userAccount={userAccount}
+                      userProxyAddress={proxyAddress}
+                    ></TaskOverview>
+                  )}
+                </Route>
+                <Route exact path="/">
+                  <User userAccount={userAccount}></User>
+                </Route>
+
+                {/*Redirect all 404's to home*/}
+                <Redirect to="/" />
+              </>
+            )}
           </Switch>
         </Body>
       </Router>

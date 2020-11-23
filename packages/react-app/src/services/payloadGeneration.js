@@ -1,16 +1,8 @@
 import ethers from "ethers";
 import { addresses, abis } from "@project/contracts";
 import { abiEncodeWithSelector } from "../utils/helpers";
-import {
-  Operation,
-  Condition,
-  Action,
-  Task
-} from "@gelatonetwork/core";
-import {
-  PRICE_ORACLE_MAKER_PAYLOAD,
-  ETH
-} from "../utils/constants";
+import { Operation, Condition, Action, Task } from "@gelatonetwork/core";
+import { PRICE_ORACLE_MAKER_PAYLOAD, ETH } from "../utils/constants";
 const GelatoCoreLib = require("@gelatonetwork/core");
 const {
   EXTERNAL_PROVIDER_ADDR,
@@ -19,88 +11,95 @@ const {
   CONDITION_DEBT_BRIDGE_AFFORDABLE_ADDR,
   CONNECT_FULL_REFINANCE_ADDR,
   PROVIDER_DSA_MODULE_ADDR,
-  GELATO_CORE
+  GELATO_CORE,
 } = addresses;
 
-const { 
-  ConnectGelato,
-} = abis;
+const { ConnectGelato } = abis;
 
 export const openMakerVault = async (colType) => {
   return await abiEncodeWithSelector({
-    abi: [
-      "function open(string colType) payable returns (uint)"
-    ],
+    abi: ["function open(string colType) payable returns (uint)"],
     functionname: "open",
-    inputs: [colType]
+    inputs: [colType],
   });
-}
+};
 
 export const depositMakerVault = async (value, vaultId) => {
   return await abiEncodeWithSelector({
     abi: [
-      "function deposit(uint vault, uint amt, uint getId, uint setId) payable"
+      "function deposit(uint vault, uint amt, uint getId, uint setId) payable",
     ],
     functionname: "deposit",
-    inputs: [vaultId, value, 0, 0]
+    inputs: [vaultId, value, 0, 0],
   });
-}
+};
 
 export const borrowMakerVault = async (value, vaultId) => {
   return await abiEncodeWithSelector({
     abi: [
-      "function borrow(uint vault, uint amt, uint getId, uint setId) payable"
+      "function borrow(uint vault, uint amt, uint getId, uint setId) payable",
     ],
     functionname: "borrow",
-    inputs: [vaultId, value, 0, 0]
+    inputs: [vaultId, value, 0, 0],
   });
-}
+};
 
 export const authorizeGelato = async () => {
   return await abiEncodeWithSelector({
-    abi: [
-      "function add(address authority) payable "
-    ],
+    abi: ["function add(address authority) payable "],
     functionname: "add",
-    inputs: [GELATO_CORE]
+    inputs: [GELATO_CORE],
   });
-}
+};
 
-export const submitRefinanceMakerToMaker = async (user, ratioLimit, minColRatio, vaultAId, vaultBId) => {
+export const submitRefinanceMakerToMaker = async (
+  user,
+  ratioLimit,
+  minColRatio,
+  vaultAId,
+  vaultBId
+) => {
+  console.log(ratioLimit);
   const signer = await user.getSigner();
 
   //#region Condition Vault is Safe
 
-  const conditionVaultIsSafeContract = new ethers.Contract(CONDITION_VAULT_IS_SAFE_ADDR,
+  const conditionVaultIsSafeContract = new ethers.Contract(
+    CONDITION_VAULT_IS_SAFE_ADDR,
     [
-      "function getConditionData(uint256 _vaultId, address _priceOracle, bytes _oraclePayload, uint256 _minColRatio) pure returns (bytes)"
+      "function getConditionData(uint256 _vaultId, address _priceOracle, bytes _oraclePayload, uint256 _minColRatio) pure returns (bytes)",
     ],
     signer
-    );
+  );
 
   const conditionMakerVaultUnsafeObj = new Condition({
     inst: CONDITION_VAULT_IS_SAFE_ADDR,
     data: await conditionVaultIsSafeContract.getConditionData(
-      vaultAId, PRICE_ORACLE_ADDR,
+      vaultAId,
+      PRICE_ORACLE_ADDR,
       PRICE_ORACLE_MAKER_PAYLOAD,
       minColRatio
-    )
+    ),
   });
 
   //#endregion Condition Vault is Safe
 
   //#region Condition Debt Bridge is Affordable
 
-  const conditionDebtBridgeIsAffordableContract = new ethers.Contract(CONDITION_DEBT_BRIDGE_AFFORDABLE_ADDR,
+  const conditionDebtBridgeIsAffordableContract = new ethers.Contract(
+    CONDITION_DEBT_BRIDGE_AFFORDABLE_ADDR,
     [
-      "function getConditionData(uint256 _vaultId, uint256 _ratioLimit) pure returns (bytes)"
+      "function getConditionData(uint256 _vaultId, uint256 _ratioLimit) pure returns (bytes)",
     ],
     signer
-    );
-  
+  );
+
   const conditionDebtBridgeIsAffordableObj = new Condition({
     inst: CONDITION_DEBT_BRIDGE_AFFORDABLE_ADDR,
-    data: await conditionDebtBridgeIsAffordableContract.getConditionData(vaultAId, ratioLimit)
+    data: await conditionDebtBridgeIsAffordableContract.getConditionData(
+      vaultAId,
+      ratioLimit
+    ),
   });
 
   //#endregion Condition Debt Bridge is Affordable
@@ -110,13 +109,13 @@ export const submitRefinanceMakerToMaker = async (user, ratioLimit, minColRatio,
   const debtBridgeCalculationForFullRefinanceAction = new Action({
     addr: CONNECT_FULL_REFINANCE_ADDR,
     data: await abiEncodeWithSelector({
-      abi : [
-        "function getDataAndCastMakerToMaker(uint256 _vaultAId, uint256 _vaultBId, address _colToken, string _colType) payable"
+      abi: [
+        "function getDataAndCastMakerToMaker(uint256 _vaultAId, uint256 _vaultBId, address _colToken, string _colType) payable",
       ],
       functionname: "getDataAndCastMakerToMaker",
-      inputs: [vaultAId, vaultBId, ETH, "ETH-B"]
+      inputs: [vaultAId, vaultBId, ETH, "ETH-B"],
     }),
-    operation: Operation.Delegatecall
+    operation: Operation.Delegatecall,
   });
 
   //#endregion Action Call Connector For Full Refinancing
@@ -124,8 +123,11 @@ export const submitRefinanceMakerToMaker = async (user, ratioLimit, minColRatio,
   //#region Debt Bridge Task Creation
 
   const debtBridgeTask = new Task({
-    conditions: [conditionMakerVaultUnsafeObj, conditionDebtBridgeIsAffordableObj],
-    actions: [debtBridgeCalculationForFullRefinanceAction]
+    conditions: [
+      conditionMakerVaultUnsafeObj,
+      conditionDebtBridgeIsAffordableObj,
+    ],
+    actions: [debtBridgeCalculationForFullRefinanceAction],
   });
 
   //getTaskHash(debtBridgeTask)
@@ -142,15 +144,11 @@ export const submitRefinanceMakerToMaker = async (user, ratioLimit, minColRatio,
   return await abiEncodeWithSelector({
     abi: ConnectGelato,
     functionname: "submitTask",
-    inputs: [
-      gelatoExternalProvider,
-      debtBridgeTask,
-      0
-    ],
-  })
+    inputs: [gelatoExternalProvider, debtBridgeTask, 0],
+  });
 
   //#endregion Gelato Connector call cast
-}
+};
 
 export const getTaskHash = (task) => {
   const conditionsWithoutData = [];

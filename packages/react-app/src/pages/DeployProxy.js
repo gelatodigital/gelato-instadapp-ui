@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { CardWrapper, ButtonBlue } from "../components";
+import { CardWrapper, Button } from "../components";
 
 import { deployProxyAction } from "../services/stateWrites";
 
@@ -10,20 +10,20 @@ const DeployProxy = ({ userAccount, setHasProxy }) => {
     <>
       <CardWrapper>
         {!loading && (
-          <ButtonBlue
+          <Button
             onClick={async () => {
               setLoading(true);
               try {
                 await deployProxyAction(userAccount);
-                setHasProxy(true);
                 setLoading(false);
+                setHasProxy(true);
               } catch (error) {
                 setLoading(false);
               }
             }}
           >
             Deploy Proxy
-          </ButtonBlue>
+          </Button>
         )}
         {loading && <p style={{ color: "#4299e1" }}>waiting...</p>}
       </CardWrapper>

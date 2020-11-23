@@ -1,0 +1,13 @@
+{
+  "name": "@project/hardhat",
+  "version": "1.0.0",
+  "scripts": {
+    "run-fork": "dotenv cross-var npx hardhat node --fork https://eth-mainnet.alchemyapi.io/v2/%ALCHEMY_ID%"
+  },
+  "dependencies": {
+    "cross-var": "1.1.0",
+    "dotenv": "8.2.0",
+    "dotenv-cli": "3.0.0",
+    "hardhat": "2.0.3"
+  }
+}
