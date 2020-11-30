@@ -89,13 +89,13 @@ function App() {
           {userAccount && hasProxy && (
             <>
               <HyperLink>
-                <Link style={{ color: "white", textDecoration: "none" }} to="/">
+                <Link style={{ color: "#483D8B", textDecoration: "none", "font-weight": "bold" }} to="/">
                   User
                 </Link>
               </HyperLink>
               <HyperLink>
                 <Link
-                  style={{ color: "white", textDecoration: "none" }}
+                  style={{ color: "#483D8B", textDecoration: "none", "font-weight": "bold" }}
                   to="/submit-task"
                 >
                   Submit Task
@@ -103,7 +103,7 @@ function App() {
               </HyperLink>
               <HyperLink>
                 <Link
-                  style={{ color: "white", textDecoration: "none" }}
+                  style={{ color: "#483D8B", textDecoration: "none", "font-weight": "bold" }}
                   to="/task-overview"
                 >
                   Task Overview
