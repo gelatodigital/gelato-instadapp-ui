@@ -3,6 +3,7 @@ import { addresses, abis } from "@project/contracts";
 import { abiEncodeWithSelector } from "../utils/helpers";
 import { Operation, Condition, Action, Task } from "@gelatonetwork/core";
 import { PRICE_ORACLE_MAKER_PAYLOAD, ETH } from "../utils/constants";
+import { getUserProxyContract } from './stateReads';
 const GelatoCoreLib = require("@gelatonetwork/core");
 const {
   EXTERNAL_PROVIDER_ADDR,
@@ -61,68 +62,48 @@ export const submitRefinanceMakerToMaker = async (
   vaultBId
 ) => {
   console.log(ratioLimit);
-  const signer = await user.getSigner();
-
+  const userProxy = await getUserProxyContract(user);
   //#region Condition Vault is Safe
-
-  const conditionVaultIsSafeContract = new ethers.Contract(
-    CONDITION_VAULT_IS_SAFE_ADDR,
-    [
-      "function getConditionData(uint256 _vaultId, address _priceOracle, bytes _oraclePayload, uint256 _minColRatio) pure returns (bytes)",
-    ],
-    signer
-  );
 
   const conditionMakerVaultUnsafeObj = new Condition({
     inst: CONDITION_VAULT_IS_SAFE_ADDR,
-    data: await conditionVaultIsSafeContract.getConditionData(
-      vaultAId,
-      PRICE_ORACLE_ADDR,
-      PRICE_ORACLE_MAKER_PAYLOAD,
-      minColRatio
-    ),
+    data: await abiEncodeWithSelector({
+      abi: [
+        "function isVaultUnsafe(uint256 _vaultId, address _priceOracle, bytes _oraclePayload, uint256 _minColRatio) view returns (string)",
+      ],
+      functionname: "isVaultUnsafe",
+      inputs: [vaultAId, PRICE_ORACLE_ADDR, PRICE_ORACLE_MAKER_PAYLOAD, minColRatio],
+    }), 
   });
 
   //#endregion Condition Vault is Safe
 
   //#region Condition Debt Bridge is Affordable
 
-  const conditionDebtBridgeIsAffordableContract = new ethers.Contract(
-    CONDITION_DEBT_BRIDGE_AFFORDABLE_ADDR,
-    [
-      "function getConditionData(uint256 _vaultId, uint256 _ratioLimit) pure returns (bytes)",
-    ],
-    signer
-  );
-
   const conditionDebtBridgeIsAffordableObj = new Condition({
     inst: CONDITION_DEBT_BRIDGE_AFFORDABLE_ADDR,
-    data: await conditionDebtBridgeIsAffordableContract.getConditionData(
-      vaultAId,
-      ratioLimit
-    ),
+    data: await abiEncodeWithSelector({
+      abi: [
+        "function isAffordable(uint256 _vaultId, uint256 _ratioLimit) view returns (string)",
+      ],
+      functionname: "isAffordable",
+      inputs: [vaultAId, ratioLimit],
+    }),
   });
 
   //#endregion Condition Debt Bridge is Affordable
 
   //#region Condition is Vault B Will be Safe
 
-  const conditionIsDestVaultWillBeSafeContract = new ethers.Contract(
-    CONDITION_DEBT_VAULT_WILL_BE_SAFE,
-    [
-      "function getConditionData(address _dsa, uint256 _fromVaultId, uint256 _destVaultId, string memory _destColType) pure returns (bytes)",
-    ],
-    signer
-  );
-
   const conditionIsDestVaultWillBeSafeObj = new Condition({
     inst: CONDITION_DEBT_VAULT_WILL_BE_SAFE,
-    data: await conditionIsDestVaultWillBeSafeContract.getConditionData(
-      userProxy.address,
-      vaultAId,
-      vaultBId,
-      "ETH-B"
-    )
+    data: await abiEncodeWithSelector({
+      abi: [
+        "function destVaultWillBeSafe(address _dsa, uint256 _fromVaultId, uint256 _destVaultId, string memory _destColType) view returns (string)",
+      ],
+      functionname: "destVaultWillBeSafe",
+      inputs: [userProxy.address, vaultAId, vaultBId, "ETH-B"],
+    }),
   });
 
   //#endregion Condition is Vault B Will be Safe
@@ -150,11 +131,12 @@ export const submitRefinanceMakerToMaker = async (
     conditions: [
       conditionMakerVaultUnsafeObj,
       conditionDebtBridgeIsAffordableObj,
+      conditionIsDestVaultWillBeSafeObj,
     ],
     actions: [debtBridgeCalculationForFullRefinanceAction],
   });
 
-  //getTaskHash(debtBridgeTask)
+  getTaskHash(debtBridgeTask)
 
   //#endregion Debt Bridge Task Creation
 
