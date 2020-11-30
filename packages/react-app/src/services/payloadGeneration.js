@@ -8,6 +8,7 @@ const {
   EXTERNAL_PROVIDER_ADDR,
   PRICE_ORACLE_ADDR,
   CONDITION_VAULT_IS_SAFE_ADDR,
+  CONDITION_DEBT_VAULT_WILL_BE_SAFE,
   CONDITION_DEBT_BRIDGE_AFFORDABLE_ADDR,
   CONNECT_FULL_REFINANCE_ADDR,
   PROVIDER_DSA_MODULE_ADDR,
@@ -104,6 +105,28 @@ export const submitRefinanceMakerToMaker = async (
 
   //#endregion Condition Debt Bridge is Affordable
 
+  //#region Condition is Vault B Will be Safe
+
+  const conditionIsDestVaultWillBeSafeContract = new ethers.Contract(
+    CONDITION_DEBT_VAULT_WILL_BE_SAFE,
+    [
+      "function getConditionData(address _dsa, uint256 _fromVaultId, uint256 _destVaultId, string memory _destColType) pure returns (bytes)",
+    ],
+    signer
+  );
+
+  const conditionIsDestVaultWillBeSafeObj = new Condition({
+    inst: CONDITION_DEBT_VAULT_WILL_BE_SAFE,
+    data: await conditionIsDestVaultWillBeSafeContract.getConditionData(
+      userProxy.address,
+      vaultAId,
+      vaultBId,
+      "ETH-B"
+    )
+  });
+
+  //#endregion Condition is Vault B Will be Safe
+
   //#region Action Call Connector For Full Refinancing
 
   const debtBridgeCalculationForFullRefinanceAction = new Action({
@@ -116,6 +139,7 @@ export const submitRefinanceMakerToMaker = async (
       inputs: [vaultAId, vaultBId, ETH, "ETH-B"],
     }),
     operation: Operation.Delegatecall,
+    termsOkCheck: true,
   });
 
   //#endregion Action Call Connector For Full Refinancing

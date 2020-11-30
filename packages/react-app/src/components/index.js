@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 export const Header = styled.header`
-  background-color: #4299e1;
+  background-color: #c8dcec;
   min-height: 70px;
   display: flex;
   flex-direction: row;
@@ -23,7 +23,7 @@ export const Header = styled.header`
 
 export const Body = styled.body`
   align-items: center;
-  background-color: #e8f9ff;
+  background-color: #fcfdff;
   color: white;
   display: flex;
   flex-direction: column;
@@ -36,12 +36,16 @@ export const Body = styled.body`
 export const ViewCard = styled.div`
   align-items: center;
   text-align: center;
-  background-color: #4299e1;
+  background-color: #c8dcec;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  border-radius: 25px;
+  box-shadow: 2px 2px 4px #000000;
+  font-weight: bold;
   height: 75%;
   width: 20%;
+  color: #483D8B;
   p {
     margin: 0px 0px 8px;
   }
@@ -69,7 +73,7 @@ export const HyperLink = styled.a.attrs({
   target: "_blank",
   rel: "noopener noreferrer",
 })`
-  color: #61dafb;
+  color: #483D8B;
   margin: 0px 20px;
   padding: 12px 24px;
 `;
