@@ -24,6 +24,21 @@ yarn react-app:start
 
 6) [Enable Users to cancel the task](https://github.com/gelatodigital/gelato-instadapp-ui/blob/aa2f7a1023aed5d4c35a713c9a47a27474f3b578/packages/react-app/src/services/payloadGeneration.js#L188)
 
+
+## How to test the automated deb bridge?
+
+1) Deploy a DSA, set Gelato as authority, open an ETH-A Vault (you can also do the first and last part via instadapp.io)
+
+2) Go to the `Submit Task` page and input e.g. 30% as maximum fee of the vaults total dedbt you are willing to pay for tx fee, 160% as the collateralization ratio and then click on `Submit Task`
+
+3) Now check on the `Task Overview` page to see the status of your submitted task. If your Vault's collateralization ratio is not below e.g. 160%, nothing will happen
+
+4) Now draw some DAI from your ETH-A Vault which will lead to your collateralization ratio dropping below 160% (make sure you have more than 500 DAI as debt, otherwise Maker will revert)
+
+5) Wait a minute or so and then check `Task Overview` again to see if Gelato refinanced your debt to an ETH-B vault. If everything worked fine, it should show that the task was successfully executed and present you with the etherscan link.
+
+**Note:** The transaction will not be executed, if Makers ETH-B debt ceiling has been reached!
+
 ## Monorepo packacges
 
 1) **contracts**, ABIs and Contract addresses
