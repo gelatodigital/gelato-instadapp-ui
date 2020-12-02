@@ -13,6 +13,8 @@ const {
   CONDITION_DEBT_BRIDGE_AFFORDABLE_ADDR,
   CONNECT_FULL_REFINANCE_ADDR,
   PROVIDER_DSA_MODULE_ADDR,
+  CONDITION_BORROW_AMOUNT_IS_DUST,
+  CONDITION_DEBT_CEILING_IS_REACHED,
   GELATO_CORE,
 } = addresses;
 
@@ -61,7 +63,6 @@ export const submitRefinanceMakerToMaker = async (
   vaultAId,
   vaultBId
 ) => {
-  console.log(ratioLimit);
   const userProxy = await getUserProxyContract(user);
   //#region Condition Vault is Safe
 
@@ -77,6 +78,36 @@ export const submitRefinanceMakerToMaker = async (
   });
 
   //#endregion Condition Vault is Safe
+
+  //#region Condition Borrow Amount is dust
+
+  const conditionBorrowAmtIsDust = new Condition({
+    inst: CONDITION_BORROW_AMOUNT_IS_DUST,
+    data: await abiEncodeWithSelector({
+      abi: [
+        "function isBorrowAmountDust(address _dsa, uint256 _fromVaultId, uint256 _destVaultId, string memory _destColType) view returns (string)",
+      ],
+      functionname: "isBorrowAmountDust",
+      inputs: [userProxy.address, vaultAId, vaultBId, "ETH-B"],
+    }), 
+  })
+
+  //#endregion Condition Borrow Amount is dust
+
+  //#region Condition Borrow Amount is dust
+
+  const conditionDebtCeilingIsReached = new Condition({
+    inst: CONDITION_DEBT_CEILING_IS_REACHED,
+    data: await abiEncodeWithSelector({
+      abi: [
+        "function isDebtCeilingReached(address _dsa, uint256 _fromVaultId, uint256 _destVaultId, string memory _destColType) view returns (string)",
+      ],
+      functionname: "isDebtCeilingReached",
+      inputs: [userProxy.address, vaultAId, vaultBId, "ETH-B"],
+    }), 
+  })
+
+  //#endregion Condition Borrow Amount is dust
 
   //#region Condition Debt Bridge is Affordable
 
@@ -132,11 +163,13 @@ export const submitRefinanceMakerToMaker = async (
       conditionMakerVaultUnsafeObj,
       conditionDebtBridgeIsAffordableObj,
       conditionIsDestVaultWillBeSafeObj,
+      conditionBorrowAmtIsDust,
+      conditionDebtCeilingIsReached
     ],
     actions: [debtBridgeCalculationForFullRefinanceAction],
   });
 
-  getTaskHash(debtBridgeTask)
+  getTaskHash(debtBridgeTask);
 
   //#endregion Debt Bridge Task Creation
 

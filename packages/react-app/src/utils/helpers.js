@@ -115,3 +115,13 @@ export const getABICoder = () => {
 export const toPercentFormat = (percent) => {
   return getFormattedToFixed2(percent) + "%";
 };
+
+export const getDisplayablePercent = (val) => {
+  return val
+    .mul(ethers.BigNumber.from("100"))
+    .div(ethers.utils.parseUnits("1", 18));
+}
+
+export const decodeWithoutSignature = (valueTypes, data) => {
+  return getABICoder().decode(valueTypes, "0x" + String(data).substring(10));
+}

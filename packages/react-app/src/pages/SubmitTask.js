@@ -46,7 +46,7 @@ const SubmitTask = ({ userAccount }) => {
     const data = await submitRefinanceMakerToMaker(
       userAccount,
       ethers.utils.parseUnits(String(parseFloat(ratio) / 100), 18),
-      ethers.utils.parseUnits(String(limit), 18),
+      ethers.utils.parseUnits(String(parseFloat(limit) / 100), 18),
       inputs.vaultAId,
       inputs.vaultBId
     );
@@ -77,7 +77,7 @@ const SubmitTask = ({ userAccount }) => {
 
         <ViewCard>
           <label style={{ margin: "10px" }}>
-            Collateralization Ratio that should trigger the refinance
+            Collateralization Ratio that should trigger the refinance as %
           </label>
 
           <input
