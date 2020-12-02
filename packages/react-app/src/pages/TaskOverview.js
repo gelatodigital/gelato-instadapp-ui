@@ -1,5 +1,4 @@
 import React, { useMemo, useState, useEffect } from "react";
-import ethers from "ethers";
 import { CardWrapper, Button } from "../components";
 import { useTable, useSortBy } from "react-table";
 // Styled components
@@ -10,12 +9,14 @@ import GET_TASK_RECEIPT_WRAPPERS from "../graphql/gelato";
 import {
   isKnownTask,
   sleep,
-  getABICoder,
+  decodeWithoutSignature,
   toPercentFormat,
+  getDisplayablePercent
 } from "../utils/helpers";
 import { getCancelTaskData } from "../services/payloadGeneration";
 import { userProxyCast } from "../services/stateWrites";
 import { addresses } from "@project/contracts";
+
 const { CONNECT_GELATO_ADDR } = addresses;
 
 const Styles = styled.div`
@@ -115,18 +116,17 @@ const TaskOverview = ({ userAccount, userProxyAddress }) => {
 
   const decodeAffordableRatio = (data) => {
     return String(
-      getABICoder()
-        .decode(["uint256", "uint256"], data)[1]
-        .mul(ethers.BigNumber.from("100"))
-        .div(ethers.utils.parseUnits("1", 18))
+      getDisplayablePercent(
+        decodeWithoutSignature(["uint256", "uint256"], data)[1]
+      )
     );
   };
 
   const decodeVaultUnsafe = (data) => {
     return String(
-      getABICoder()
-        .decode(["uint256", "address", "bytes", "uint256"], data)[3]
-        .div(ethers.utils.parseUnits("1", 18))
+      getDisplayablePercent(
+        decodeWithoutSignature(["uint256", "address", "bytes", "uint256"], data)[3]
+      )
     );
   };
 
