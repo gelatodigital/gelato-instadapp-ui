@@ -1,4 +1,4 @@
-# Exaple UI featuring Instadapp x Gelato
+# Example UI featuring Instadapp x Gelato
 Example UI to illustrate how to offer the automated debt bridge use case using InstaDapp and Gelato to Users.
 
 ## Run the Reacht App
