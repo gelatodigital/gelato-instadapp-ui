@@ -29,7 +29,7 @@ yarn react-app:start
 
 1) Deploy a DSA, set Gelato as authority, open an ETH-A Vault (you can also do the first and last part via instadapp.io)
 
-2) Go to the `Submit Task` page and input e.g. 30% as maximum fee of the vaults total dedbt you are willing to pay for tx fee, 160% as the collateralization ratio and then click on `Submit Task`
+2) Go to the `Submit Task` page and input e.g. 30% as maximum fee of the vaults total debt you are willing to pay for tx fee, 160% as the collateralization ratio and then click on `Submit Task`
 
 3) Now check on the `Task Overview` page to see the status of your submitted task. If your Vault's collateralization ratio is not below e.g. 160%, nothing will happen
 
