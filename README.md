@@ -14,7 +14,7 @@ yarn react-app:start
 
 1) [Enable GelatoCore as an authority on the Users DSA](https://github.com/gelatodigital/gelato-instadapp-ui/blob/aa2f7a1023aed5d4c35a713c9a47a27474f3b578/packages/react-app/src/services/payloadGeneration.js#L49)
 
-2) [Submit the Debt Bridge Task to Gelato via the DSA](https://github.com/gelatodigital/gelato-instadapp-ui/blob/aa2f7a1023aed5d4c35a713c9a47a27474f3b578/packages/react-app/src/services/payloadGeneration.js#L57)
+2) [Submit the Debt Bridge Task to Gelato via the DSA](https://github.com/gelatodigital/gelato-instadapp-ui/blob/d32224ac01fe49349f9c98c408150bccfd6a2c8e/packages/react-app/src/pages/SubmitTask.js#L41-L55)
 
 3) [Define the subgraph Query](https://github.com/gelatodigital/gelato-instadapp-ui/blob/aa2f7a1023aed5d4c35a713c9a47a27474f3b578/packages/react-app/src/graphql/gelato.js#L3)
 
