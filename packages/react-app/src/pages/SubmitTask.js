@@ -4,7 +4,7 @@ import { ViewCard, CardWrapper, Button } from "../components";
 import { getVault, getUserProxy } from "../services/stateReads";
 import { userProxyCast } from "../services/stateWrites";
 import { addresses } from "@project/contracts";
-import { submitRefinanceMakerToMaker } from "../services/payloadGeneration";
+import { submitRefinanceMakerToMaker, submitRefinanceMakerToAave } from "../services/payloadGeneration";
 const { CONNECT_GELATO_ADDR } = addresses;
 
 const SubmitTask = ({ userAccount }) => {
@@ -38,7 +38,7 @@ const SubmitTask = ({ userAccount }) => {
     setLimit(newValue);
   };
 
-  const submit = async () => {
+  const submitMaker = async () => {
     if (ratio === 0) return;
     if (limit === 0) return;
     if (parseInt(inputs.vaultAId) === 0) return;
@@ -49,6 +49,21 @@ const SubmitTask = ({ userAccount }) => {
       ethers.utils.parseUnits(String(parseFloat(limit) / 100), 18),
       inputs.vaultAId,
       inputs.vaultBId
+    );
+
+    await userProxyCast([CONNECT_GELATO_ADDR], [data], userAccount, 0, 350000);
+  };
+
+  const submitAave = async () => {
+    if (ratio === 0) return;
+    if (limit === 0) return;
+    if (parseInt(inputs.vaultAId) === 0) return;
+
+    const data = await submitRefinanceMakerToAave(
+      userAccount,
+      ethers.utils.parseUnits(String(parseFloat(ratio) / 100), 18),
+      ethers.utils.parseUnits(String(parseFloat(limit) / 100), 18),
+      inputs.vaultAId
     );
 
     await userProxyCast([CONNECT_GELATO_ADDR], [data], userAccount, 0, 350000);
@@ -95,16 +110,34 @@ const SubmitTask = ({ userAccount }) => {
               onClick={async () => {
                 setLoading(true);
                 try {
-                  await submit();
+                  await submitMaker();
                   setLoading(false);
                 } catch {
                   setLoading(false);
                 }
               }}
             >
-              Submit Task
+              Submit Maker Task
             </Button>
           )}
+          {!loading && 
+            (
+              <br/>
+          )}
+          {!loading && (<Button 
+              disabled={true}
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  await submitAave();
+                  setLoading(false);
+                } catch {
+                  setLoading(false);
+                }
+              }}
+            >
+              Submit Aave Task
+            </Button>)}
           {loading && <p>waiting...</p>}
         </ViewCard>
       </CardWrapper>

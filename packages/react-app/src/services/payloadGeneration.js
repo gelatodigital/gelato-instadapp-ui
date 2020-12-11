@@ -2,7 +2,7 @@ import ethers from "ethers";
 import { addresses, abis } from "@project/contracts";
 import { abiEncodeWithSelector } from "../utils/helpers";
 import { Operation, Condition, Action, Task } from "@gelatonetwork/core";
-import { PRICE_ORACLE_MAKER_PAYLOAD, ETH } from "../utils/constants";
+import { PRICE_ORACLE_MAKER_PAYLOAD, ETH, DAI } from "../utils/constants";
 import { getUserProxyContract } from './stateReads';
 const GelatoCoreLib = require("@gelatonetwork/core");
 const {
@@ -16,6 +16,9 @@ const {
   CONDITION_BORROW_AMOUNT_IS_DUST,
   CONDITION_DEBT_CEILING_IS_REACHED,
   GELATO_CORE,
+  CONDITION_AAVE_HAS_LIQUIDITY,
+  CONDITION_AAVE_POSITION_WILL_BE_SAFE,
+  CONNECT_FULL_REFINANCE_ADDR_MAKER_AAVE
 } = addresses;
 
 const { ConnectGelato } = abis;
@@ -55,6 +58,121 @@ export const authorizeGelato = async () => {
     inputs: [GELATO_CORE],
   });
 };
+
+export const submitRefinanceMakerToAave = async (
+  user,
+  ratioLimit,
+  minColRatio,
+  vaultId) => {
+    const userProxy = await getUserProxyContract(user);
+    //#region Condition Vault is Safe
+  
+    const conditionMakerVaultUnsafeObj = new Condition({
+      inst: CONDITION_VAULT_IS_SAFE_ADDR,
+      data: await abiEncodeWithSelector({
+        abi: [
+          "function isVaultUnsafe(uint256 _vaultId, address _priceOracle, bytes _oraclePayload, uint256 _minColRatio) view returns (string)",
+        ],
+        functionname: "isVaultUnsafe",
+        inputs: [vaultId, PRICE_ORACLE_ADDR, PRICE_ORACLE_MAKER_PAYLOAD, minColRatio],
+      }), 
+    });
+  
+    //#endregion Condition Vault is Safe
+  
+    //#region Condition Borrow Amount is dust
+  
+    const conditionAaveHasLiquidityObj = new Condition({
+      inst: CONDITION_AAVE_HAS_LIQUIDITY,
+      data: await abiEncodeWithSelector({
+        abi: [
+          "function hasLiquidty(address _tokenToBorrow, uint256 _fromVaultId) view returns (string memory)",
+        ],
+        functionname: "hasLiquidty",
+        inputs: [DAI, vaultId],
+      }), 
+    })
+  
+    //#endregion Condition Borrow Amount is dust
+  
+    //#region Condition Debt Bridge is Affordable
+  
+    const conditionDebtBridgeIsAffordableObj = new Condition({
+      inst: CONDITION_DEBT_BRIDGE_AFFORDABLE_ADDR,
+      data: await abiEncodeWithSelector({
+        abi: [
+          "function isAffordable(uint256 _vaultId, uint256 _ratioLimit) view returns (string)",
+        ],
+        functionname: "isAffordable",
+        inputs: [vaultId, ratioLimit],
+      }),
+    });
+  
+    //#endregion Condition Debt Bridge is Affordable
+  
+    //#region Condition is Vault B Will be Safe
+  
+    const conditionAavePositionWillBeSafeObj = new Condition({
+      inst: CONDITION_AAVE_POSITION_WILL_BE_SAFE,
+      data: await abiEncodeWithSelector({
+        abi: [
+          "function destPositionIsSafe(address _dsa, uint256 _fromVaultId, address _priceOracle, bytes memory _oraclePayload) view returns (string memory)",
+        ],
+        functionname: "destPositionIsSafe",
+        inputs: [userProxy.address, vaultId, PRICE_ORACLE_ADDR, PRICE_ORACLE_MAKER_PAYLOAD],
+      }),
+    });
+  
+    //#endregion Condition is Vault B Will be Safe
+  
+    //#region Action Call Connector For Full Refinancing
+  
+    const debtBridgeCalculationForFullRefinanceAction = new Action({
+      addr: CONNECT_FULL_REFINANCE_ADDR_MAKER_AAVE,
+      data: await abiEncodeWithSelector({
+        abi: [
+          "function getDataAndCastMakerToAave(uint256 _vaultId, address _colToken) payable",
+        ],
+        functionname: "getDataAndCastMakerToAave",
+        inputs: [vaultId, ETH],
+      }),
+      operation: Operation.Delegatecall,
+      termsOkCheck: true,
+    });
+  
+    //#endregion Action Call Connector For Full Refinancing
+  
+    //#region Debt Bridge Task Creation
+  
+    const debtBridgeTask = new Task({
+      conditions: [
+        conditionMakerVaultUnsafeObj,
+        conditionDebtBridgeIsAffordableObj,
+        conditionAavePositionWillBeSafeObj,
+        conditionAaveHasLiquidityObj
+      ],
+      actions: [debtBridgeCalculationForFullRefinanceAction],
+    });
+  
+    getTaskHash(debtBridgeTask);
+  
+    //#endregion Debt Bridge Task Creation
+  
+    //#region Gelato Connector call cast
+  
+    const gelatoExternalProvider = new GelatoCoreLib.GelatoProvider({
+      addr: EXTERNAL_PROVIDER_ADDR, // Gelato Provider Address
+      module: PROVIDER_DSA_MODULE_ADDR, // Gelato DSA module
+    });
+  
+    return await abiEncodeWithSelector({
+      abi: ConnectGelato,
+      functionname: "submitTask",
+      inputs: [gelatoExternalProvider, debtBridgeTask, 0],
+    });
+  
+    //#endregion Gelato Connector call cast
+  }
 
 export const submitRefinanceMakerToMaker = async (
   user,

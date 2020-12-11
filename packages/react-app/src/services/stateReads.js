@@ -3,7 +3,7 @@ import { getMiniAddress } from "../utils/helpers";
 import { addresses, abis } from "@project/contracts";
 import { GelatoCore } from "@gelatonetwork/core";
 
-const { INSTA_LIST_ADDR, GELATO_CORE, MAKER_RESOLVER_ADDR } = addresses;
+const { INSTA_LIST_ADDR, GELATO_CORE, MAKER_RESOLVER_ADDR, LENDING_POOL_ADDRESSES_PROVIDER } = addresses;
 const { InstaList, MakerResolver } = abis;
 
 export const getUserAddress = async (provider) => {
@@ -142,3 +142,39 @@ export const getVault = async (user, userAddr, colType) => {
   }
   return undefined;
 };
+
+export const getAaveCollateralInUsd = async (user) => {
+  const dsaAddr = await getUserProxy(user);
+
+  const lendingPoolAddressesProvider = new ethers.Contract(
+    LENDING_POOL_ADDRESSES_PROVIDER,
+    ["function getLendingPool() view returns (address)"],
+    user
+  );
+
+  const lendingPool = new ethers.Contract(
+    lendingPoolAddressesProvider.getLendingPool(),
+    ["function getUserAccountData(address user) view returns ( uint256 totalCollateralETH, uint256 totalDebtETH, uint256 availableBorrowsETH, uint256 currentLiquidationThreshold, uint256 ltv, uint256 healthFactor)"],
+    user
+  );
+
+  return (await lendingPool.getUserAccountData(dsaAddr)).totalCollateralETH;
+}
+
+export const getAaveDebtInUsd = async (user) => {
+  const dsaAddr = await getUserProxy(user);
+
+  const lendingPoolAddressesProvider = new ethers.Contract(
+    LENDING_POOL_ADDRESSES_PROVIDER,
+    ["function getLendingPool() view returns (address)"],
+    user
+  );
+
+  const lendingPool = new ethers.Contract(
+    lendingPoolAddressesProvider.getLendingPool(),
+    ["function getUserAccountData(address user) view returns ( uint256 totalCollateralETH, uint256 totalDebtETH, uint256 availableBorrowsETH, uint256 currentLiquidationThreshold, uint256 ltv, uint256 healthFactor)"],
+    user
+  );
+
+  return (await lendingPool.getUserAccountData(dsaAddr)).totalDebtETH;
+}

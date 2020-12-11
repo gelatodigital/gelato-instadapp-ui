@@ -14,6 +14,8 @@ import {
   getTokenBalance,
   getETHAVaultDebt,
   getETHAVaultCols,
+  getAaveDebtInUsd,
+  getAaveCollateralInUsd
 } from "../services/stateReads";
 import { getMiniAddress, getFormattedNumber } from "../utils/helpers";
 import { userProxyCast } from "../services/stateWrites";
@@ -46,6 +48,8 @@ const User = ({ userAccount }) => {
     const proxyDAIBalance = await getFormattedNumber(
       await getTokenBalance(userAccount, DAI)
     );
+    const aaveDebt = await getFormattedNumber(await getAaveDebtInUsd(userAccount));
+    const aaveCol = await getFormattedNumber(await getAaveCollateralInUsd(userAccount));
 
     setInputs({
       ...inputs,
@@ -58,6 +62,8 @@ const User = ({ userAccount }) => {
       dsProxyDebt: vaultADebt,
       dsProxyLockCol: vaultALockedCol,
       userProxy: userProxy,
+      aaveDebt: aaveDebt,
+      aaveCol: aaveCol,
     });
   };
 
@@ -178,6 +184,16 @@ const User = ({ userAccount }) => {
         <ViewCardWrapper
           title="DSA DAI Token Balance"
           state={inputs.dsProxyBalance}
+        ></ViewCardWrapper>
+      </CardWrapper>
+      <CardWrapper>
+        <ViewCardWrapper
+          title="DSA Aave Locked Col"
+          state={inputs.aaveCol}
+        ></ViewCardWrapper>
+        <ViewCardWrapper
+          title="DSA Aave Debt"
+          state={inputs.aaveDebt}
         ></ViewCardWrapper>
       </CardWrapper>
       <CardWrapper>
