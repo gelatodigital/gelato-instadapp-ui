@@ -96,7 +96,7 @@ function App() {
                   User
                 </Link>
               </HyperLink>
-              <HyperLink>
+              {/* <HyperLink>
                 <Link
                   style={{ color: "#483D8B", textDecoration: "none", "font-weight": "bold" }}
                   to="/submit-task-aave"
@@ -119,13 +119,13 @@ function App() {
                 >
                   Maker
                 </Link>
-              </HyperLink>
+              </HyperLink> */}
               <HyperLink>
                 <Link
                   style={{ color: "#483D8B", textDecoration: "none", "font-weight": "bold" }}
                   to="/submit-task-x"
                 >
-                  X
+                  {`Maker <> X`}
                 </Link>
               </HyperLink>
               <HyperLink>
