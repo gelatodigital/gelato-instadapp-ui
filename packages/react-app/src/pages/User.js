@@ -23,7 +23,7 @@ import {
   depositMakerVault,
   borrowMakerVault,
   authorizeGelato,
-} from "../services/payloadGeneration";
+} from "../services/payloadGeneration/payloadMaker";
 const { CONNECT_MAKER_ADDR, CONNECT_AUTH, DAI } = addresses;
 
 const User = ({ userAccount }) => {

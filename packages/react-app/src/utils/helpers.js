@@ -2,7 +2,7 @@ import ethers from "ethers";
 import { addresses, abis } from "@project/contracts";
 import { GelatoCore } from "@gelatonetwork/core";
 
-import { TASK_HASH } from "./constants";
+import { TASK_HASH_AAVE, TASK_HASH_COMPOUND, TASK_HASH_MAKER, TASK_HASH_X } from "./constants";
 
 const { MULTI_SEND, GELATO_CORE } = addresses;
 
@@ -83,7 +83,12 @@ export const getTaskHash = (task) => {
 
 // Returns true if task correspons to certain Task Hashes
 export const isKnownTask = (task) => {
-  return getTaskHash(task) === TASK_HASH;
+  return (
+    getTaskHash(task) === TASK_HASH_AAVE ||
+    getTaskHash(task) === TASK_HASH_COMPOUND ||
+    getTaskHash(task) === TASK_HASH_MAKER ||
+    getTaskHash(task) === TASK_HASH_X
+    ) ;
 };
 
 export const sleep = (ms) => {

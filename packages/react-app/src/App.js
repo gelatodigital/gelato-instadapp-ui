@@ -2,7 +2,10 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Web3Provider } from "@ethersproject/providers";
 import { useQuery } from "@apollo/react-hooks";
 import User from "./pages/User";
-import SubmitTask from "./pages/SubmitTask";
+import SubmitToAaveTask from "./pages/SubmitToAaveTask";
+import SubmitToCompoundTask from "./pages/SubmitToCompoundTask";
+import SubmitToMakerTask from "./pages/SubmitToMakerTask";
+import SubmitToXTask from "./pages/SubmitToXTask";
 import DeployProxy from "./pages/DeployProxy";
 import TaskOverview from "./pages/TaskOverview";
 import ethers from "ethers";
@@ -96,9 +99,33 @@ function App() {
               <HyperLink>
                 <Link
                   style={{ color: "#483D8B", textDecoration: "none", "font-weight": "bold" }}
-                  to="/submit-task"
+                  to="/submit-task-aave"
                 >
-                  Submit Task
+                  Aave
+                </Link>
+              </HyperLink>
+              <HyperLink>
+                <Link
+                  style={{ color: "#483D8B", textDecoration: "none", "font-weight": "bold" }}
+                  to="/submit-task-compound"
+                >
+                  Compound
+                </Link>
+              </HyperLink>
+              <HyperLink>
+                <Link
+                  style={{ color: "#483D8B", textDecoration: "none", "font-weight": "bold" }}
+                  to="/submit-task-maker"
+                >
+                  Maker
+                </Link>
+              </HyperLink>
+              <HyperLink>
+                <Link
+                  style={{ color: "#483D8B", textDecoration: "none", "font-weight": "bold" }}
+                  to="/submit-task-x"
+                >
+                  X
                 </Link>
               </HyperLink>
               <HyperLink>
@@ -135,8 +162,17 @@ function App() {
             )}
             {userAccount && hasProxy && (
               <>
-                <Route path="/submit-task">
-                  <SubmitTask userAccount={userAccount}></SubmitTask>
+              <Route path="/submit-task-aave">
+                  <SubmitToAaveTask userAccount={userAccount}></SubmitToAaveTask>
+                </Route>
+                <Route path="/submit-task-compound">
+                  <SubmitToCompoundTask userAccount={userAccount}></SubmitToCompoundTask>
+                </Route>
+                <Route path="/submit-task-maker">
+                  <SubmitToMakerTask userAccount={userAccount}></SubmitToMakerTask>
+                </Route>
+                <Route path="/submit-task-x">
+                  <SubmitToXTask userAccount={userAccount}></SubmitToXTask>
                 </Route>
                 <Route path="/task-overview">
                   {userAccount && hasProxy && proxyAddress && (
