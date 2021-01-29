@@ -13,7 +13,7 @@ import {
   toPercentFormat,
   getDisplayablePercent
 } from "../utils/helpers";
-import { getCancelTaskData } from "../services/payloadGeneration";
+import { getCancelTaskData } from "../services/payloadGeneration/payloadMaker";
 import { userProxyCast } from "../services/stateWrites";
 import { addresses } from "@project/contracts";
 
@@ -69,7 +69,6 @@ const TaskOverview = ({ userAccount, userProxyAddress }) => {
       status: "",
       submitDate: "",
       limit: "",
-      feeratio: "",
       execDate: "",
       execLink: "",
     },
@@ -95,10 +94,6 @@ const TaskOverview = ({ userAccount, userProxyAddress }) => {
         accessor: "limit",
       },
       {
-        Header: "Maximum Fees in Col %",
-        accessor: "feeratio",
-      },
-      {
         Header: "Exec Date",
         accessor: "execDate",
       },
@@ -113,14 +108,6 @@ const TaskOverview = ({ userAccount, userProxyAddress }) => {
     ],
     []
   );
-
-  const decodeAffordableRatio = (data) => {
-    return String(
-      getDisplayablePercent(
-        decodeWithoutSignature(["uint256", "uint256"], data)[1]
-      )
-    );
-  };
 
   const decodeVaultUnsafe = (data) => {
     return String(
@@ -147,9 +134,6 @@ const TaskOverview = ({ userAccount, userProxyAddress }) => {
 
       const execUrl = `https://etherscan.io/tx/${wrapper.executionHash}`;
       const submitUrl = `https://etherscan.io/tx/${wrapper.submissionHash}`;
-      const feeRatio = toPercentFormat(
-        decodeAffordableRatio(wrapper.taskReceipt.tasks[0].conditions[1].data)
-      );
       newRows.push({
         id: parseInt(wrapper.id),
         status: wrapper.status,
@@ -160,9 +144,6 @@ const TaskOverview = ({ userAccount, userProxyAddress }) => {
         ),
         limit: toPercentFormat(
           decodeVaultUnsafe(wrapper.taskReceipt.tasks[0].conditions[0].data)
-        ),
-        feeratio: toPercentFormat(
-          decodeAffordableRatio(wrapper.taskReceipt.tasks[0].conditions[1].data)
         ),
         execDate:
           wrapper.executionDate !== null
@@ -288,7 +269,6 @@ const TaskOverview = ({ userAccount, userProxyAddress }) => {
                 status: "",
                 submitDate: "",
                 limit: "",
-                feeratio: "",
                 execDate: "",
                 execLink: "",
                 cancel: "",

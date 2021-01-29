@@ -4,13 +4,12 @@ import { ViewCard, CardWrapper, Button } from "../components";
 import { getVault, getUserProxy } from "../services/stateReads";
 import { userProxyCast } from "../services/stateWrites";
 import { addresses } from "@project/contracts";
-import { submitRefinanceMakerToMaker } from "../services/payloadGeneration";
+import { submitRefinanceMakerToMaker } from "../services/payloadGeneration/payloadMakerToMaker";
 const { CONNECT_GELATO_ADDR } = addresses;
 
 const SubmitTask = ({ userAccount }) => {
   const [loading, setLoading] = useState(false);
   const [inputs, setInputs] = useState({});
-  const [ratio, setRatio] = useState();
   const [limit, setLimit] = useState();
 
   const inputsUpdates = async () => {
@@ -28,24 +27,17 @@ const SubmitTask = ({ userAccount }) => {
     });
   };
 
-  const handleRatioChange = async (event) => {
-    const newValue = event.target.value;
-    setRatio(newValue);
-  };
-
   const handleLimitChange = async (event) => {
     const newValue = event.target.value;
     setLimit(newValue);
   };
 
   const submit = async () => {
-    if (ratio === 0) return;
     if (limit === 0) return;
     if (parseInt(inputs.vaultAId) === 0) return;
 
     const data = await submitRefinanceMakerToMaker(
       userAccount,
-      ethers.utils.parseUnits(String(parseFloat(ratio) / 100), 18),
       ethers.utils.parseUnits(String(parseFloat(limit) / 100), 18),
       inputs.vaultAId,
       inputs.vaultBId
@@ -61,20 +53,6 @@ const SubmitTask = ({ userAccount }) => {
   return (
     <>
       <CardWrapper>
-        <ViewCard>
-          <label style={{ margin: "10px" }}>
-            Maximum fee as % of Vault-A collateral you are willing to pay
-          </label>
-
-          <input
-            style={{ maxWidth: "80%" }}
-            type="number"
-            value={ratio}
-            onChange={handleRatioChange}
-            defaultValue={inputs.defaultValue}
-          />
-        </ViewCard>
-
         <ViewCard>
           <label style={{ margin: "10px" }}>
             Collateralization Ratio that should trigger the refinance as %
@@ -102,7 +80,7 @@ const SubmitTask = ({ userAccount }) => {
                 }
               }}
             >
-              Submit Task
+              Submit Maker Task
             </Button>
           )}
           {loading && <p>waiting...</p>}
