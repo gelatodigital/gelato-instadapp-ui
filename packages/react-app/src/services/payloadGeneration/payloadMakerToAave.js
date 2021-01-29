@@ -11,7 +11,7 @@ const {
     CONDITION_MAKER_TO_AAVE_SAFE,
     CONDITION_MAKER_TO_AAVE_LIQUID,
     CONNECT_GELATO_DATA_MAKER_TO_AAVE,
-    EXTERNAL_PROVIDER_ADDR,
+    GELATO_PROVIDER,
     PROVIDER_DSA_MODULE_ADDR
   } = addresses;
 
@@ -25,7 +25,7 @@ export const submitRefinanceMakerToAave = async (
   ) => {
     const userProxy = await getUserProxyContract(user);
     //#region Condition Vault is Safe
-  
+
     const conditionMakerVaultUnsafeObj = new Condition({
       inst: CONDITION_MAKER_VAULT_UNSAFE_OSM,
       data: await abiEncodeWithSelector({
@@ -42,9 +42,9 @@ export const submitRefinanceMakerToAave = async (
             }),
             limit
         ],
-      }), 
+      }),
     });
-  
+
     //#endregion Condition Vault is Safe
 
     //#region futur Aave position will be safe
@@ -80,9 +80,9 @@ export const submitRefinanceMakerToAave = async (
       });
 
     //#endregion Aave has enough liquidity
-  
+
     //#region Action Call Connector For Full Refinancing
-  
+
     const debtBridgeCalculationForFullRefinanceAction = new Action({
       addr: CONNECT_GELATO_DATA_MAKER_TO_AAVE,
       data: await abiEncodeWithSelector({
@@ -95,11 +95,11 @@ export const submitRefinanceMakerToAave = async (
       operation: Operation.Delegatecall,
       termsOkCheck: true,
     });
-  
+
     //#endregion Action Call Connector For Full Refinancing
-  
+
     //#region Debt Bridge Task Creation
-  
+
     const debtBridgeTask = new Task({
       conditions: [
         conditionMakerVaultUnsafeObj,
@@ -108,23 +108,23 @@ export const submitRefinanceMakerToAave = async (
       ],
       actions: [debtBridgeCalculationForFullRefinanceAction],
     });
-  
+
     getTaskHash(debtBridgeTask);
-  
+
     //#endregion Debt Bridge Task Creation
-  
+
     //#region Gelato Connector call cast
-  
+
     const gelatoExternalProvider = new GelatoProvider({
-      addr: EXTERNAL_PROVIDER_ADDR, // Gelato Provider Address
+      addr: GELATO_PROVIDER, // Gelato Provider Address
       module: PROVIDER_DSA_MODULE_ADDR, // Gelato DSA module
     });
-  
+
     return await abiEncodeWithSelector({
       abi: ConnectGelato,
       functionname: "submitTask",
       inputs: [gelatoExternalProvider, debtBridgeTask, 0],
     });
-  
+
     //#endregion Gelato Connector call cast
   };

@@ -1,7 +1,7 @@
 // This address points to a dummy ERC20 contract deployed on Ethereum Mainnet,
 // Goerli, Kovan, Rinkeby and Ropsten. Replace it with your smart contracts.
 const addresses = {
-  EXTERNAL_PROVIDER_ADDR: "0x3d9A46b5D421bb097AC28B4f70a4A1441A12920C",
+  GELATO_PROVIDER: "0x3d9A46b5D421bb097AC28B4f70a4A1441A12920C",
   OSM: "0x81FE72B5A8d1A857d176C3E7d5Bd2679A9B85763",
   GELATO_CORE: "0x025030bdaa159f281cae63873e68313a703725a5",
   INSTA_LIST_ADDR: "0x4c8a1BEb8a87765788946D6B19C6C6355194AbEb",
