@@ -1,5 +1,5 @@
 # Example UI featuring Instadapp x Gelato
-Example UI to illustrate how to offer the automated debt bridge use case using InstaDapp and Gelato to Users. Gelato will monitor when the Users debt position is close to being liquidated on Maker and refinance the position to Aave, Compound or Maker ETH-B, depending on available liquidity (priority left to right)
+Example UI to illustrate how to offer the automated debt bridge use case using InstaDapp and Gelato to Users. Gelato will monitor when the Users debt position is close to being liquidated on Maker and refinance the position to Aave, Maker ETH-B or Compound, depending on available liquidity (priority left to right)
 
 ## Run the Reacht App
 
