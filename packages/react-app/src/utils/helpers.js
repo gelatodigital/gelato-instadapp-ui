@@ -3,7 +3,7 @@ import { addresses } from "@project/contracts";
 
 import { TASK_HASH_X } from "./constants";
 
-const { MULTI_SEND } = addresses;
+const { MULTI_SEND, CONNECT_GELATO_DATA_MAKER_TO_X } = addresses;
 
 export const getMiniAddress = (account) => {
   return `${account.substring(0, 6)}...${account.substring(38, 42)}`;
@@ -125,4 +125,8 @@ export const getDisplayablePercent = (val) => {
 
 export const decodeWithoutSignature = (valueTypes, data) => {
   return getABICoder().decode(valueTypes, "0x" + String(data).substring(10));
+}
+
+export const isDebtBridgeTask = (action) => {
+  return action.addr.toString().toUpperCase() === CONNECT_GELATO_DATA_MAKER_TO_X.toUpperCase();
 }

@@ -7,6 +7,7 @@ import SubmitToCompoundTask from "./pages/SubmitToCompoundTask";
 import SubmitToMakerTask from "./pages/SubmitToMakerTask";
 import SubmitToXTask from "./pages/SubmitToXTask";
 import DeployProxy from "./pages/DeployProxy";
+import AwaitingExecTaskOverview from "./pages/AwaitingExecTaskOverview";
 import TaskOverview from "./pages/TaskOverview";
 import ethers from "ethers";
 import GelatoLogo from "./components/Logo";
@@ -136,6 +137,14 @@ function App() {
                   Task Overview
                 </Link>
               </HyperLink>
+              <HyperLink>
+                <Link
+                  style={{ color: "#483D8B", textDecoration: "none", "font-weight": "bold" }}
+                  to="/awaitExec-overview"
+                >
+                  Await Execution Task Overview
+                </Link>
+              </HyperLink>
             </>
           )}
           <WalletButton
@@ -180,6 +189,14 @@ function App() {
                       userAccount={userAccount}
                       userProxyAddress={proxyAddress}
                     ></TaskOverview>
+                  )}
+                </Route>
+                <Route path="/awaitExec-overview">
+                  {userAccount && hasProxy && proxyAddress && (
+                    <AwaitingExecTaskOverview
+                      userAccount={userAccount}
+                      userProxyAddress={proxyAddress}
+                    ></AwaitingExecTaskOverview>
                   )}
                 </Route>
                 <Route exact path="/">
