@@ -1,9 +1,9 @@
 import { gql } from "apollo-boost";
 
 const GET_ALL_TASK_RECEIPT_WRAPPERS = gql`
-  query taskReceiptWrapper($skip: Int) {
+  query taskReceiptWrapper($skip: Int, $status: String!) {
     taskReceiptWrappers(
-      where: { status: "awaitingExec"}
+      where: { status: $status}
       first: 100
       skip: $skip
       orderBy: id

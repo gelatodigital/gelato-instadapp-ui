@@ -8,10 +8,8 @@ import { useQuery } from "@apollo/react-hooks";
 import GET_ALL_TASK_RECEIPT_WRAPPERS from "../graphql/debtBridgeAllTask";
 import {
   isKnownTask,
-  isDebtBridgeTask,
   sleep,
   decodeWithoutSignature,
-  getDisplayablePercent
 } from "../utils/helpers";
 
 const Styles = styled.div`
@@ -46,12 +44,13 @@ const Styles = styled.div`
   }
 `;
 
-const AwaitingExecTaskOverview = ({ userAccount, userProxyAddress }) => {
+const Stats = ({  status }) => {
   const { loading, error, data, refetch, fetchMore } = useQuery(
     GET_ALL_TASK_RECEIPT_WRAPPERS,
     {
       variables: {
         skip: 0,
+        status: status
       },
     }
   );
@@ -61,9 +60,10 @@ const AwaitingExecTaskOverview = ({ userAccount, userProxyAddress }) => {
       id: "",
       user: "",
       status: "",
-      submitDate: "",
+      submitLink: "",
       vaultID: "",
       userProxyAddress: "",
+      submitLink: "",
     },
   ]);
 
@@ -80,7 +80,7 @@ const AwaitingExecTaskOverview = ({ userAccount, userProxyAddress }) => {
       },
       {
         Header: "Submit Link",
-        accessor: "submitDate",
+        accessor: "submitLink",
       },
       {
         Header: "Vault Id",
@@ -89,6 +89,10 @@ const AwaitingExecTaskOverview = ({ userAccount, userProxyAddress }) => {
       {
         Header: "DSA",
         accessor: "userProxyAddress",
+      },
+      {
+        Header: "Exec Link",
+        accessor: "execLink",
       },
     ],
     []
@@ -114,39 +118,43 @@ const AwaitingExecTaskOverview = ({ userAccount, userProxyAddress }) => {
     prepareRow,
   } = useTable({ columns, data: rowData }, useSortBy);
 
-  const createRowData = (data) => {
-    const newRows = [];
+  const getActiveAutomatedVaults = (data) => {
+    const newData = [];
     // Filter all tasks by known Tash Hashes
     for (let wrapper of data.taskReceiptWrappers) {
-      if (!isDebtBridgeTask(wrapper.taskReceipt.tasks[0].actions[0]) ||
-      !isKnownTask(wrapper.taskReceipt.tasks[wrapper.taskReceipt.index])
-      )
+      if (!isKnownTask(wrapper.taskReceipt.tasks[wrapper.taskReceipt.index])) {
         continue;
+      }
 
-        console.log(wrapper);
-        
-      const execUrl = `https://etherscan.io/tx/${wrapper.executionHash}`;
       const submitUrl = `https://etherscan.io/tx/${wrapper.submissionHash}`;
-      newRows.push({
+      const execLink = `https://etherscan.io/tx/${wrapper.executionHash}`;
+      newData.push({
         id: parseInt(wrapper.id),
         status: wrapper.status,
-        submitDate: (
+        submitLink: (
           <a target="_blank" href={submitUrl}>
             Link
           </a>
         ),
-        vaultID: 
+        vaultID:
           decodeVaultUnsafe(wrapper.taskReceipt.tasks[0].conditions[0].data)
         ,
-        userProxyAddress : decodeCanDoRefinance(wrapper.taskReceipt.tasks[0].conditions[1].data)
+        userProxyAddress : decodeCanDoRefinance(wrapper.taskReceipt.tasks[0].conditions[1].data),
+        execLink: wrapper.status === "execSuccess" ? (
+          <a target="_blank" href={execLink}>
+            Link
+          </a>
+        ) : (
+          ""
+        ),
       });
     }
-    return newRows;
+    return newData;
   };
 
   useEffect(() => {
     if (data) {
-      const newRows = createRowData(data);
+      const newRows = getActiveAutomatedVaults(data);
       if (newRows.length > 0) setRowData(newRows);
     }
   }, [data]);
@@ -158,6 +166,7 @@ const AwaitingExecTaskOverview = ({ userAccount, userProxyAddress }) => {
     <>
       <CardWrapper style={{ maxWidth: "100%" }}>
         <Styles>
+          <h3>{`Tasks with status: ${status}`}</h3>
           <table {...getTableProps()}>
             <thead>
               {// Loop over the header rows
@@ -217,13 +226,13 @@ const AwaitingExecTaskOverview = ({ userAccount, userProxyAddress }) => {
               {
                 id: "",
                 status: "",
-                submitDate: "",
+                submitLink: "",
                 vaultID: "",
                 userProxyAddress: "",
               },
             ]);
             await sleep(1000);
-            setRowData(createRowData(data));
+            setRowData(getActiveAutomatedVaults(data));
           }}
         >
           Refresh
@@ -233,4 +242,4 @@ const AwaitingExecTaskOverview = ({ userAccount, userProxyAddress }) => {
   );
 };
 
-export default AwaitingExecTaskOverview;
+export default Stats;
