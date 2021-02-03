@@ -7,6 +7,7 @@ import SubmitToCompoundTask from "./pages/SubmitToCompoundTask";
 import SubmitToMakerTask from "./pages/SubmitToMakerTask";
 import SubmitToXTask from "./pages/SubmitToXTask";
 import DeployProxy from "./pages/DeployProxy";
+import Stats from "./pages/Stats";
 import TaskOverview from "./pages/TaskOverview";
 import ethers from "ethers";
 import GelatoLogo from "./components/Logo";
@@ -136,6 +137,14 @@ function App() {
                   Task Overview
                 </Link>
               </HyperLink>
+              <HyperLink>
+                <Link
+                  style={{ color: "#483D8B", textDecoration: "none", "font-weight": "bold" }}
+                  to="/stats"
+                >
+                  Stats
+                </Link>
+              </HyperLink>
             </>
           )}
           <WalletButton
@@ -180,6 +189,18 @@ function App() {
                       userAccount={userAccount}
                       userProxyAddress={proxyAddress}
                     ></TaskOverview>
+                  )}
+                </Route>
+                <Route path="/stats">
+                  {userAccount && hasProxy && proxyAddress && (
+                    <>
+                    <Stats
+                      status={"awaitingExec"}
+                    ></Stats>
+                    <Stats
+                      status={"execSuccess"}
+                    ></Stats>
+                  </>
                   )}
                 </Route>
                 <Route exact path="/">
