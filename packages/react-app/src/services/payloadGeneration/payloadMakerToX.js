@@ -3,6 +3,7 @@ import { addresses, abis } from "@project/contracts";
 import { abiEncodeWithSelector } from "../../utils/helpers";
 import { Operation, Condition, Action, Task, GelatoProvider } from "@gelatonetwork/core";
 import { ETH } from "../../utils/constants";
+import { ethers } from 'ethers';
 
 const {
     OSM,
@@ -28,16 +29,21 @@ export const submitRefinanceMakerToX = async (
       inst: CONDITION_MAKER_VAULT_UNSAFE_OSM,
       data: await abiEncodeWithSelector({
         abi: [
-          "function isVaultUnsafeOSM(uint256 _vaultId, address _priceOracle, bytes _oraclePayload, uint256 _minColRatio) view returns (string)",
+          "function isVaultUnsafeOSM(uint256 _vaultId, address _priceOracle, bytes _oraclePeekPayload, bytes _oraclePeepPayload, uint256 _minPeek, uint256 _minPeep) view returns (string)",
         ],
         functionname: "isVaultUnsafeOSM",
         inputs: [
             vaultAId,
             OSM,
             await abiEncodeWithSelector({
+              abi: ["function peek() view returns (bytes32,bool)"],
+              functionname: "peek",
+            }),
+            await abiEncodeWithSelector({
                 abi: ["function peep() view returns (bytes32,bool)"],
                 functionname: "peep",
             }),
+            ethers.utils.parseUnits("151", 16),
             limit
         ],
       }),
