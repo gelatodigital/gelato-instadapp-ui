@@ -1,7 +1,7 @@
 import ethers from "ethers";
 import { addresses } from "@project/contracts";
 
-import { TASK_HASH_X } from "./constants";
+import { TASK_HASH_X, NEW_TASK_HASH_X } from "./constants";
 
 const { MULTI_SEND, CONNECT_GELATO_DATA_MAKER_TO_X } = addresses;
 
@@ -82,10 +82,18 @@ export const getTaskHash = (task) => {
 
 // Returns true if task correspons to certain Task Hashes
 export const isKnownTask = (task) => {
+  const taskHash = getTaskHash(task);
   return (
-    getTaskHash(task) === TASK_HASH_X
+    taskHash === TASK_HASH_X
+    || taskHash === NEW_TASK_HASH_X
     ) ;
 };
+
+export const isOldTask = (task) => {
+  return (
+    getTaskHash(task) === TASK_HASH_X
+  );
+}
 
 export const sleep = (ms) => {
   return new Promise((resolve) => {
