@@ -11,9 +11,11 @@ import {
   sleep,
   decodeWithoutSignature,
   toPercentFormat,
-  getDisplayablePercent
+  getDisplayablePercent,
+  isOldTask
 } from "../utils/helpers";
 import { getCancelTaskData } from "../services/payloadGeneration/payloadMaker";
+import { submitRefinanceMakerToX } from "../services/payloadGeneration/payloadMakerToX";
 import { userProxyCast } from "../services/stateWrites";
 import { addresses } from "@project/contracts";
 
@@ -105,15 +107,34 @@ const TaskOverview = ({ userAccount, userProxyAddress }) => {
         Header: "Cancel Task",
         accessor: "cancel",
       },
+      {
+        Header: "Update Task",
+        accessor: "update"
+      },
     ],
     []
   );
 
   const decodeVaultUnsafe = (data) => {
     return String(
-      getDisplayablePercent(
         decodeWithoutSignature(["uint256", "address", "bytes", "uint256"], data)[3]
-      )
+    );
+  };
+  const decodeVaultUnsafeInPercent = (data) => {
+    return String(
+      getDisplayablePercent(decodeWithoutSignature(["uint256", "address", "bytes", "uint256"], data)[3])
+    );
+  };
+
+  const decodeCanDoRefinanceToGetVaultAId = (data) => {
+    return String(
+        decodeWithoutSignature(["address", "uint256", "address", "uint256", "string"], data)[1]
+    );
+  };
+
+  const decodeCanDoRefinanceToGetVaultBId = (data) => {
+    return String(
+        decodeWithoutSignature(["address", "uint256", "address", "uint256", "string"], data)[3]
     );
   };
 
@@ -143,7 +164,7 @@ const TaskOverview = ({ userAccount, userProxyAddress }) => {
           </a>
         ),
         limit: toPercentFormat(
-          decodeVaultUnsafe(wrapper.taskReceipt.tasks[0].conditions[0].data)
+          decodeVaultUnsafeInPercent(wrapper.taskReceipt.tasks[0].conditions[0].data)
         ),
         execDate:
           wrapper.executionDate !== null
@@ -189,6 +210,41 @@ const TaskOverview = ({ userAccount, userProxyAddress }) => {
           ) : (
             ""
           ),
+        update:
+          wrapper.status === "awaitingExec" && isOldTask(wrapper.taskReceipt.tasks[wrapper.taskReceipt.index]) ? (
+          <>
+            <button
+              style={{
+                borderColor: "white",
+                color: "white",
+                backgroundColor: "#4299e1",
+              }}
+              onClick={async () => {
+                const cancelTaskData = getCancelTaskData(wrapper.taskReceipt);
+                const newTask = submitRefinanceMakerToX(
+                  userAccount,
+                  decodeVaultUnsafe(wrapper.taskReceipt.tasks[0].conditions[0].data),
+                  decodeCanDoRefinanceToGetVaultAId(wrapper.taskReceipt.tasks[0].conditions[1].data),
+                  decodeCanDoRefinanceToGetVaultBId(wrapper.taskReceipt.tasks[0].conditions[1].data))
+                try {
+                  await userProxyCast(
+                    [CONNECT_GELATO_ADDR, CONNECT_GELATO_ADDR],
+                    [cancelTaskData, newTask],
+                    userAccount,
+                    0,
+                    300000
+                  );
+                } catch (err) {
+                  console.log(err);
+                }
+              }}
+            >
+              Update
+            </button>
+          </>
+        ) : (
+          ""
+        ),
       });
     }
     return newRows;
@@ -272,6 +328,7 @@ const TaskOverview = ({ userAccount, userProxyAddress }) => {
                 execDate: "",
                 execLink: "",
                 cancel: "",
+                update: "",
               },
             ]);
             await sleep(1000);
